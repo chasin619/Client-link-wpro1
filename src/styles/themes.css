@@ -1,0 +1,154 @@
+:root {
+  --font-heading: "Inter", sans-serif;
+  --font-body: "Inter", sans-serif;
+}
+
+[data-theme="elegant-rose"] {
+  --color-primary: 233 30 99;
+  --color-secondary: 252 228 236;
+  --color-accent: 173 20 87;
+  --color-background: 255 255 255;
+  --color-foreground: 31 41 55;
+  --color-muted: 248 250 252;
+  --color-muted-foreground: 100 116 139;
+  --color-border: 226 232 240;
+  --color-input: 241 245 249;
+  --color-ring: 233 30 99;
+
+  --font-heading: "Playfair Display", serif;
+  --font-body: "Inter", sans-serif;
+
+  --button-radius: 8px;
+  --card-radius: 12px;
+  --input-radius: 8px;
+
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="modern-minimal"] {
+  --color-primary: 37 99 235;
+  --color-secondary: 241 245 249;
+  --color-accent: 14 165 233;
+  --color-background: 255 255 255;
+  --color-foreground: 15 23 42;
+  --color-muted: 248 250 252;
+  --color-muted-foreground: 100 116 139;
+  --color-border: 226 232 240;
+  --color-input: 248 250 252;
+  --color-ring: 37 99 235;
+
+  --font-heading: "Inter", sans-serif;
+  --font-body: "Inter", sans-serif;
+
+  --button-radius: 6px;
+  --card-radius: 8px;
+  --input-radius: 6px;
+
+  --transition: all 0.2s ease-in-out;
+}
+
+[data-theme="rustic-charm"] {
+  --color-primary: 146 64 14;
+  --color-secondary: 254 243 199;
+  --color-accent: 217 119 6;
+  --color-background: 255 251 235;
+  --color-foreground: 28 25 23;
+  --color-muted: 254 243 199;
+  --color-muted-foreground: 120 113 108;
+  --color-border: 231 229 228;
+  --color-input: 254 243 199;
+  --color-ring: 146 64 14;
+
+  --font-heading: "Merriweather", serif;
+  --font-body: "Source Sans Pro", sans-serif;
+
+  --button-radius: 12px;
+  --card-radius: 16px;
+  --input-radius: 12px;
+
+  --transition: all 0.4s ease-out;
+}
+
+[data-theme="luxury-gold"] {
+  --color-primary: 180 83 9;
+  --color-secondary: 254 249 231;
+  --color-accent: 245 158 11;
+  --color-background: 255 255 255;
+  --color-foreground: 17 24 39;
+  --color-muted: 254 249 231;
+  --color-muted-foreground: 107 114 128;
+  --color-border: 229 231 235;
+  --color-input: 254 249 231;
+  --color-ring: 180 83 9;
+
+  --font-heading: "Cormorant Garamond", serif;
+  --font-body: "Crimson Text", serif;
+
+  --button-radius: 4px;
+  --card-radius: 8px;
+  --input-radius: 4px;
+
+  --transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+[data-theme="garden-fresh"] {
+  --color-primary: 5 150 105;
+  --color-secondary: 236 253 245;
+  --color-accent: 16 185 129;
+  --color-background: 255 255 255;
+  --color-foreground: 6 78 59;
+  --color-muted: 240 253 244;
+  --color-muted-foreground: 107 114 128;
+  --color-border: 209 250 229;
+  --color-input: 236 253 245;
+  --color-ring: 5 150 105;
+
+  --font-heading: "Nunito Sans", sans-serif;
+  --font-body: "Open Sans", sans-serif;
+
+  --button-radius: 20px;
+  --card-radius: 20px;
+  --input-radius: 20px;
+
+  --transition: all 0.3s spring;
+}
+
+/* Component styles that use theme variables */
+.theme-button {
+  border-radius: var(--button-radius);
+  transition: var(--transition);
+  background: rgb(var(--color-primary));
+  color: rgb(var(--color-background));
+}
+
+.theme-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px -5px rgba(var(--color-primary), 0.3);
+}
+
+.theme-card {
+  border-radius: var(--card-radius);
+  background: rgb(var(--color-background));
+  border: 1px solid rgb(var(--color-border));
+  transition: var(--transition);
+}
+
+.theme-input {
+  border-radius: var(--input-radius);
+  background: rgb(var(--color-input));
+  border: 2px solid rgb(var(--color-border));
+  color: rgb(var(--color-foreground));
+}
+
+/* .theme-input:focus {
+  ring: 2px solid rgb(var(--color-ring));
+} */
+
+/* Typography */
+.theme-heading {
+  font-family: var(--font-heading);
+}
+
+.theme-body {
+  font-family: var(--font-body);
+}

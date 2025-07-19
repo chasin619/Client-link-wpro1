@@ -60,7 +60,6 @@ export function ThemeProvider({
         setCurrentTheme(theme);
     };
 
-    // Load vendor's theme on mount
     useEffect(() => {
         const loadVendorTheme = async () => {
             setIsLoading(true);

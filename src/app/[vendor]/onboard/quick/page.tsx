@@ -1,8 +1,8 @@
-import { OnboardWizard } from '@/components/onboarding/onboard-wizard';
-import { getVendorBySlug } from '@/lib/queries';
+import { QuickOnboardWizard } from '@/components/onboarding/quick-onboard-wizard';
 import { notFound } from 'next/navigation';
+import { getVendorBySlug } from '@/lib/queries';
 
-interface OnboardPageProps {
+interface QuickOnboardPageProps {
     params: Promise<{ vendor: string }>;
 }
 
@@ -13,8 +13,8 @@ export async function generateMetadata({ params }: { params: Promise<{ vendor: s
     if (!vendor) return {};
 
     return {
-        title: `Wedding Planning - ${vendor.business_name}`,
-        description: `Plan your perfect wedding with ${vendor.business_name}. Share your vision and get a customized floral proposal.`,
+        title: `Quick Inquiry - ${vendor.business_name}`,
+        description: `Fast track your wedding planning inquiry with ${vendor.business_name}. Get a proposal in minutes.`,
         robots: {
             index: false,
             follow: true,
@@ -22,9 +22,8 @@ export async function generateMetadata({ params }: { params: Promise<{ vendor: s
     };
 }
 
-export default async function OnboardPage({ params }: OnboardPageProps) {
+export default async function QuickOnboardPage({ params }: QuickOnboardPageProps) {
     const { vendor: vendorSlug } = await params;
-    // Verify vendor exists
     const vendor = await getVendorBySlug(vendorSlug);
 
     if (!vendor) {
@@ -33,7 +32,7 @@ export default async function OnboardPage({ params }: OnboardPageProps) {
 
     return (
         <div>
-            <OnboardWizard vendorSlug={vendorSlug} />
+            <QuickOnboardWizard vendorSlug={vendorSlug} />
         </div>
     );
 }

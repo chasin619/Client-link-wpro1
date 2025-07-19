@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, Calendar, MapPin, Phone, Mail } from 'lucide-react';
+import { ArrowRight, MapPin, Phone, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useTheme } from '@/hooks/use-theme';

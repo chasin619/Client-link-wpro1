@@ -16,6 +16,7 @@ import { ServiceSelectionStep } from './steps/service-selection';
 import { DesignPreferencesStep } from './steps/design-preferences';
 import { AdditionalInfoStep } from './steps/additional-info';
 import { PreviewSummary } from './steps/preview-summary';
+import { InquiryConfirmation } from './inquiry-confirmation';
 import { Flower2, Sparkles } from 'lucide-react';
 
 interface OnboardWizardProps {
@@ -24,9 +25,10 @@ interface OnboardWizardProps {
 
 export function OnboardWizard({ vendorSlug }: OnboardWizardProps) {
     const router = useRouter();
-    const { data, setSessionId, setVendorSlug, nextStep, prevStep, markCompleted } = useOnboardingStore();
+    const { data, setSessionId, setVendorSlug, nextStep, prevStep, markCompleted, goToStep } = useOnboardingStore();
     const { currentTheme, isLoading: themeLoading } = useTheme();
     const [sessionId, setSessionIdState] = useState<string>('');
+    const [showInquiryConfirmation, setShowInquiryConfirmation] = useState(false);
 
     // Generate session ID on mount
     useEffect(() => {
@@ -55,6 +57,12 @@ export function OnboardWizard({ vendorSlug }: OnboardWizardProps) {
     ];
 
     const handleNext = async () => {
+        // Show inquiry confirmation after completing personal details
+        if (data.currentStep === 1 && canProgressFromStep(1, data)) {
+            setShowInquiryConfirmation(true);
+            return;
+        }
+
         if (data.currentStep < data.totalSteps) {
             if (data.currentStep === 6) {
                 // Complete onboarding from preview
@@ -67,12 +75,37 @@ export function OnboardWizard({ vendorSlug }: OnboardWizardProps) {
     };
 
     const handlePrev = () => {
+        if (showInquiryConfirmation) {
+            setShowInquiryConfirmation(false);
+            return;
+        }
+
         if (data.currentStep > 1) {
             prevStep();
         }
     };
-    console.log(data.currentStep)
+
+    const handleContinueFromInquiry = () => {
+        setShowInquiryConfirmation(false);
+        nextStep(); // Go to step 2
+    };
+
+    const handleSkipToReview = () => {
+        setShowInquiryConfirmation(false);
+        goToStep(6); // Jump directly to review
+    };
+
     const renderCurrentStep = () => {
+        if (showInquiryConfirmation) {
+            return (
+                <InquiryConfirmation
+                    vendorSlug={vendorSlug}
+                    onContinue={handleContinueFromInquiry}
+                    onSkipToReview={handleSkipToReview}
+                />
+            );
+        }
+
         switch (data.currentStep) {
             case 1:
                 return <PersonalDetailsStep />;
@@ -116,36 +149,43 @@ export function OnboardWizard({ vendorSlug }: OnboardWizardProps) {
                                     Wedding Planning
                                 </h1>
                                 <p className="text-sm text-muted-foreground">
-                                    Tell us about your special day
+                                    {showInquiryConfirmation
+                                        ? "Your inquiry has been created!"
+                                        : "Tell us about your special day"
+                                    }
                                 </p>
                             </div>
                         </div>
 
-                        <AutoSaveIndicator
-                            isSaving={isSaving}
-                            lastSavedAt={lastSavedAt}
-                            error={saveError}
-                        />
+                        {!showInquiryConfirmation && (
+                            <AutoSaveIndicator
+                                isSaving={isSaving}
+                                lastSavedAt={lastSavedAt}
+                                error={saveError}
+                            />
+                        )}
                     </div>
 
-                    {/* Progress */}
-                    <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">
-                                Step {data.currentStep} of {data.totalSteps}
-                            </span>
-                            <span
-                                className="font-medium"
-                                style={{ color: currentTheme.colors.primary }}
-                            >
-                                {Math.round(progress)}% Complete
-                            </span>
+                    {/* Progress - hide during inquiry confirmation */}
+                    {!showInquiryConfirmation && (
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">
+                                    Step {data.currentStep} of {data.totalSteps}
+                                </span>
+                                <span
+                                    className="font-medium"
+                                    style={{ color: currentTheme.colors.primary }}
+                                >
+                                    {Math.round(progress)}% Complete
+                                </span>
+                            </div>
+                            <Progress
+                                value={progress}
+                                className="h-2"
+                            />
                         </div>
-                        <Progress
-                            value={progress}
-                            className="h-2"
-                        />
-                    </div>
+                    )}
                 </div>
             </div>
 
@@ -155,37 +195,39 @@ export function OnboardWizard({ vendorSlug }: OnboardWizardProps) {
                     className="theme-card"
                     style={{ borderRadius: currentTheme.components.card.borderRadius }}
                 >
-                    <CardHeader className="text-center border-b">
-                        <div className="flex items-center justify-center gap-2 mb-2">
-                            <Sparkles
-                                className="h-5 w-5"
-                                style={{ color: currentTheme.colors.accent }}
-                            />
-                            <Badge
-                                variant="secondary"
-                                style={{
-                                    backgroundColor: `${currentTheme.colors.primary}10`,
-                                    color: currentTheme.colors.primary
-                                }}
+                    {!showInquiryConfirmation && (
+                        <CardHeader className="text-center border-b">
+                            <div className="flex items-center justify-center gap-2 mb-2">
+                                <Sparkles
+                                    className="h-5 w-5"
+                                    style={{ color: currentTheme.colors.accent }}
+                                />
+                                <Badge
+                                    variant="secondary"
+                                    style={{
+                                        backgroundColor: `${currentTheme.colors.primary}10`,
+                                        color: currentTheme.colors.primary
+                                    }}
+                                >
+                                    {stepTitles[data.currentStep - 1]}
+                                </Badge>
+                            </div>
+                            <h2
+                                className="text-3xl font-bold theme-heading"
+                                style={{ fontFamily: currentTheme.fonts.heading }}
                             >
-                                {stepTitles[data.currentStep - 1]}
-                            </Badge>
-                        </div>
-                        <h2
-                            className="text-3xl font-bold theme-heading"
-                            style={{ fontFamily: currentTheme.fonts.heading }}
-                        >
-                            {getStepDescription(data.currentStep)}
-                        </h2>
-                    </CardHeader>
+                                {getStepDescription(data.currentStep)}
+                            </h2>
+                        </CardHeader>
+                    )}
 
                     <CardContent className="p-8">
                         <div className="animate-theme-fade-in">
                             {renderCurrentStep()}
                         </div>
 
-                        {/* Only show navigation if not on preview step */}
-                        {data.currentStep !== 6 && (
+                        {/* Only show navigation if not on preview step and not showing inquiry confirmation */}
+                        {data.currentStep !== 6 && !showInquiryConfirmation && (
                             <StepNavigation
                                 currentStep={data.currentStep}
                                 totalSteps={data.totalSteps}
@@ -234,10 +276,6 @@ function canProgressFromStep(step: number, data: any): boolean {
         default:
             return true;
     }
-}
-
-function isFormMinimallyComplete(data: any): boolean {
-    return !!(data.email && data.brideName);
 }
 
 function OnboardingWizardSkeleton() {

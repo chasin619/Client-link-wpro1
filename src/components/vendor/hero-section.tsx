@@ -6,7 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { useTheme } from '@/hooks/use-theme';
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import TypeWriter from 'react-typewriter-effect';
+import dynamic from 'next/dynamic';
+
+// Dynamically import TypeWriter to prevent SSR issues
+const TypeWriter = dynamic(() => import('react-typewriter-effect'), {
+    ssr: false,
+    loading: () => <span>Loading...</span>
+});
 
 interface HeroSectionProps {
     vendor: {
@@ -24,12 +30,18 @@ export function HeroSection({ vendor }: HeroSectionProps) {
     const { currentTheme, isLoading } = useTheme();
     const [animationStep, setAnimationStep] = useState(0);
     const [typingComplete, setTypingComplete] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
 
     const titleText = vendor.heroTitle || vendor.business_name;
 
+    // Ensure component is mounted before using browser APIs
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
     // Orchestrated animation sequence
     useEffect(() => {
-        if (isLoading) return;
+        if (isLoading || !isMounted) return;
 
         const sequence = [
             { delay: 300, step: 1 },   // Start typing effect
@@ -44,7 +56,7 @@ export function HeroSection({ vendor }: HeroSectionProps) {
 
         // Set typing complete after estimated time
         setTimeout(() => setTypingComplete(true), titleText.length * 100 + 1000);
-    }, [isLoading, titleText.length]);
+    }, [isLoading, titleText.length, isMounted]);
 
     if (isLoading) {
         return <HeroSkeleton />;
@@ -55,6 +67,8 @@ export function HeroSection({ vendor }: HeroSectionProps) {
     };
 
     const openMap = () => {
+        if (typeof window === 'undefined') return;
+
         const address = encodeURIComponent(vendor.business_address);
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
@@ -66,6 +80,8 @@ export function HeroSection({ vendor }: HeroSectionProps) {
     };
 
     const scrollToPortfolio = () => {
+        if (typeof window === 'undefined') return;
+
         const portfolioElement = document.getElementById('portfolio');
         if (portfolioElement) {
             portfolioElement.scrollIntoView({
@@ -232,13 +248,21 @@ export function HeroSection({ vendor }: HeroSectionProps) {
                 .typewriter-text {
                     font-family: ${currentTheme.fonts.heading};
                 }
+
+                .title-fallback {
+                    background: linear-gradient(45deg, var(--primary), var(--accent));
+                    background-clip: text;
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    font-family: ${currentTheme.fonts.heading};
+                }
             `}</style>
 
             <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
                 {/* Animated Background Pattern */}
                 <div
                     className="absolute inset-0 opacity-30 parallax-bg"
-                    style={{ background: currentTheme.patterns.hero }}
+                    style={{ background: currentTheme.patterns?.hero || 'transparent' }}
                 />
 
                 {/* Enhanced Background Image with Parallax */}
@@ -264,9 +288,9 @@ export function HeroSection({ vendor }: HeroSectionProps) {
                             Professional Wedding Florist
                         </Badge>
 
-                        {/* Typewriter Title */}
+                        {/* Title with TypeWriter or fallback */}
                         <h1 className="text-5xl md:text-7xl font-bold mb-6 theme-heading">
-                            {animationStep >= 1 && (
+                            {animationStep >= 1 && isMounted ? (
                                 <span className="hero-title typewriter-text">
                                     <TypeWriter
                                         textStyle={{
@@ -285,6 +309,10 @@ export function HeroSection({ vendor }: HeroSectionProps) {
                                         typeSpeed={80}
                                         hideCursorAfterText={true}
                                     />
+                                </span>
+                            ) : (
+                                <span className="title-fallback">
+                                    {titleText}
                                 </span>
                             )}
                         </h1>
@@ -305,7 +333,11 @@ export function HeroSection({ vendor }: HeroSectionProps) {
                                 whileHover="hover"
                             >
                                 <Button
-                                    onClick={() => window.location.href = '/roses-by-sarah/onboard/quick'}
+                                    onClick={() => {
+                                        if (typeof window !== 'undefined') {
+                                            window.location.href = '/roses-by-sarah/onboard/quick';
+                                        }
+                                    }}
                                     size="lg"
                                     className="gradient-button px-8 py-6 text-lg font-semibold w-full sm:w-auto"
                                     style={{
@@ -386,7 +418,7 @@ export function HeroSection({ vendor }: HeroSectionProps) {
                 </div>
 
                 {/* Enhanced Decorative Wave */}
-                <div className="absolute bottom-0 left-0 right-0"  >
+                <div className="absolute bottom-0 left-0 right-0">
                     <svg viewBox="0 0 1440 320" className="w-full h-auto">
                         <path
                             fill="rgba(var(--color-background), 0.8)"
@@ -394,7 +426,7 @@ export function HeroSection({ vendor }: HeroSectionProps) {
                         />
                     </svg>
                 </div>
-            </section >
+            </section>
         </>
     );
 }

@@ -143,31 +143,7 @@ export function DesignPreferencesStep() {
 
     return (
         <div className="space-y-8">
-            {/* Header */}
-            <div className="text-center space-y-3">
-                <div
-                    className="w-16 h-16 mx-auto rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: `${currentTheme.colors.primary}10` }}
-                >
-                    <Palette
-                        className="h-8 w-8"
-                        style={{ color: currentTheme.colors.primary }}
-                    />
-                </div>
-                <h3
-                    className="text-2xl font-semibold theme-heading"
-                    style={{ fontFamily: currentTheme.fonts.heading }}
-                >
-                    Share your design vision
-                </h3>
-                <p
-                    className="text-muted-foreground max-w-md mx-auto"
-                    style={{ fontFamily: currentTheme.fonts.body }}
-                >
-                    Help us understand your style preferences so we can create arrangements
-                    that perfectly match your vision.
-                </p>
-            </div>
+
 
             <Form {...form}>
                 <form className="space-y-6">

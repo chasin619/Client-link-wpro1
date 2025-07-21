@@ -538,67 +538,6 @@ export function PreviewSummary({ vendorSlug }: PreviewSummaryProps) {
                     )}
                 </CardContent>
             </Card>
-
-            {/* Submit Section */}
-            <Card
-                className="theme-card"
-                style={{
-                    borderRadius: currentTheme.components.card.borderRadius,
-                    backgroundColor: `${currentTheme.colors.primary}05`
-                }}
-            >
-                <CardContent className="p-8 text-center">
-                    <div className="space-y-4">
-                        <div>
-                            <h3
-                                className="text-2xl font-bold theme-heading mb-2"
-                                style={{ fontFamily: currentTheme.fonts.heading }}
-                            >
-                                Ready to Submit?
-                            </h3>
-                            <p className="text-muted-foreground">
-                                {` Once you submit this information, we'll review it and get back to you with a
-                                customized proposal within 24-48 hours.`}
-                            </p>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <Button
-                                variant="outline"
-                                onClick={goBackFromPreview}
-                                className="gap-2"
-                                disabled={isSubmitting}
-                            >
-                                <Edit className="h-4 w-4" />
-                                Make Changes
-                            </Button>
-
-                            <Button
-                                onClick={handleSubmit}
-                                disabled={isSubmitting}
-                                size="lg"
-                                className="gap-2 theme-button"
-                                style={{
-                                    backgroundColor: currentTheme.colors.primary,
-                                    borderRadius: currentTheme.components.button.borderRadius
-                                }}
-                            >
-                                {isSubmitting ? (
-                                    <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                                        Submitting...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Send className="h-4 w-4" />
-                                        Submit My Information
-                                    </>
-                                )}
-                            </Button>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     );
 }

@@ -4,10 +4,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useEffect } from 'react';
-import { Heart, Mail, Phone, MessageSquare } from 'lucide-react';
+import { Heart, Mail, Phone, MessageSquare, Calendar, MapPin, PartyPopper, Users, DollarSign } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { useOnboardingStore } from '@/store/use-onboarding-store';
 import { useTheme } from '@/hooks/use-theme';
@@ -17,9 +17,11 @@ const personalDetailsSchema = z.object({
     groomName: z.string().min(2, 'Partner name must be at least 2 characters'),
     email: z.string().email('Please enter a valid email address'),
     phone: z.string().min(10, 'Please enter a valid phone number'),
-    preferredContact: z.enum(['email', 'phone', 'text'], {
-        required_error: 'Please select your preferred contact method',
-    }),
+    eventType: z.string().min(1, 'Please select an event type'),
+    eventDate: z.string().min(1, 'Please select an event date'),
+    location: z.string().min(2, 'Please enter the event location'),
+    guestCount: z.string().min(1, 'Please select estimated guest count'),
+    budgetRange: z.string().optional(),
 });
 
 type PersonalDetailsForm = z.infer<typeof personalDetailsSchema>;
@@ -35,82 +37,61 @@ export function PersonalDetailsStep() {
             groomName: data.groomName || '',
             email: data.email || '',
             phone: data.phone || '',
-            preferredContact: data.preferredContact || undefined,
+            eventType: data.eventType || '',
+            eventDate: data.eventDate || '',
+            location: data.venue || '',
+            guestCount: data.guestCount?.toString() || '',
+            budgetRange: data.budgetRange || '',
         },
     });
 
     // Watch form changes and update store
     useEffect(() => {
         const subscription = form.watch((value) => {
-            updateData(value);
+            updateData({
+                ...value,
+                venue: value.location,
+                guestCount: value.guestCount ? parseInt(value.guestCount.split('-')[0]) : undefined,
+            });
         });
         return () => subscription.unsubscribe();
     }, [form, updateData]);
 
-    const contactMethods = [
-        {
-            value: 'email',
-            label: 'Email',
-            icon: Mail,
-            description: 'Receive updates via email'
-        },
-        {
-            value: 'phone',
-            label: 'Phone Call',
-            icon: Phone,
-            description: 'Prefer phone conversations'
-        },
-        {
-            value: 'text',
-            label: 'Text Message',
-            icon: MessageSquare,
-            description: 'Quick updates via SMS'
-        },
+    const eventTypes = [
+        { value: 'wedding', label: 'Wedding' },
+        { value: 'engagement', label: 'Engagement' },
+        { value: 'anniversary', label: 'Anniversary' },
+        { value: 'birthday', label: 'Birthday' },
+        { value: 'corporate', label: 'Corporate Event' },
+        { value: 'other', label: 'Other' },
+    ];
+
+    const guestCounts = [
+        { value: '1-25', label: '1-25 guests' },
+        { value: '26-50', label: '26-50 guests' },
+        { value: '51-100', label: '51-100 guests' },
+        { value: '101-150', label: '101-150 guests' },
+        { value: '151-200', label: '151-200 guests' },
+        { value: '201-300', label: '201-300 guests' },
+        { value: '300+', label: '300+ guests' },
+    ];
+
+    const budgetRanges = [
+        { value: 'under-2000', label: 'Under $2,000' },
+        { value: '2000-5000', label: '$2,000 - $5,000' },
+        { value: '5000-10000', label: '$5,000 - $10,000' },
+        { value: '10000-20000', label: '$10,000 - $20,000' },
+        { value: 'over-20000', label: '$20,000+' },
+        { value: 'prefer-not-to-say', label: 'Prefer not to say' },
     ];
 
     return (
-        <div className="space-y-8">
-            {/* Welcome Message */}
-            <div className="text-center space-y-3">
-                <div
-                    className="w-16 h-16 mx-auto rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: `${currentTheme.colors.primary}10` }}
-                >
-                    <Heart
-                        className="h-8 w-8"
-                        style={{ color: currentTheme.colors.primary }}
-                    />
-                </div>
-                <h3
-                    className="text-2xl font-semibold theme-heading"
-                    style={{ fontFamily: currentTheme.fonts.heading }}
-                >
-                    {"Welcome! Let's get to know you"}
-                </h3>
-                <p
-                    className="text-muted-foreground max-w-md mx-auto"
-                    style={{ fontFamily: currentTheme.fonts.body }}
-                >
-                    {"We're excited to help create the perfect floral arrangements for your special day. Let's start with some basic information."}
-                </p>
-            </div>
-
+        <div className="space-y-6">
             <Form {...form}>
-                <form className="space-y-6">
-                    {/* Names Section */}
-                    <Card
-                        className="theme-card"
-                        style={{ borderRadius: currentTheme.components.card.borderRadius }}
-                    >
-                        <CardContent className="p-6">
-                            <h4 className="font-semibold mb-4 flex items-center gap-2">
-                                <div
-                                    className="w-2 h-2 rounded-full"
-                                    style={{ backgroundColor: currentTheme.colors.accent }}
-                                />
-                                Couple Information
-                            </h4>
-
+                <form className="space-y-4" autoComplete="on">
+                    {/* Basic Information */}
+                    <Card className="theme-card" style={{ borderRadius: currentTheme.components.card.borderRadius }}>
+                        <CardContent className="p-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <FormField
                                     control={form.control}
@@ -123,6 +104,7 @@ export function PersonalDetailsStep() {
                                                     placeholder="Enter bride's name"
                                                     className="theme-input"
                                                     style={{ borderRadius: currentTheme.components.input.borderRadius }}
+                                                    autoComplete="given-name"
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -142,6 +124,7 @@ export function PersonalDetailsStep() {
                                                     placeholder="Enter partner's name"
                                                     className="theme-input"
                                                     style={{ borderRadius: currentTheme.components.input.borderRadius }}
+                                                    autoComplete="family-name"
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -149,25 +132,7 @@ export function PersonalDetailsStep() {
                                         </FormItem>
                                     )}
                                 />
-                            </div>
-                        </CardContent>
-                    </Card>
 
-                    {/* Contact Information */}
-                    <Card
-                        className="theme-card"
-                        style={{ borderRadius: currentTheme.components.card.borderRadius }}
-                    >
-                        <CardContent className="p-6">
-                            <h4 className="font-semibold mb-4 flex items-center gap-2">
-                                <div
-                                    className="w-2 h-2 rounded-full"
-                                    style={{ backgroundColor: currentTheme.colors.accent }}
-                                />
-                                Contact Information
-                            </h4>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                                 <FormField
                                     control={form.control}
                                     name="email"
@@ -180,6 +145,7 @@ export function PersonalDetailsStep() {
                                                     placeholder="your.email@example.com"
                                                     className="theme-input"
                                                     style={{ borderRadius: currentTheme.components.input.borderRadius }}
+                                                    autoComplete="email"
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -200,6 +166,7 @@ export function PersonalDetailsStep() {
                                                     placeholder="(555) 123-4567"
                                                     className="theme-input"
                                                     style={{ borderRadius: currentTheme.components.input.borderRadius }}
+                                                    autoComplete="tel"
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -208,80 +175,152 @@ export function PersonalDetailsStep() {
                                     )}
                                 />
                             </div>
+                        </CardContent>
+                    </Card>
 
-                            {/* Preferred Contact Method */}
-                            <FormField
-                                control={form.control}
-                                name="preferredContact"
-                                render={({ field }) => (
-                                    <FormItem className="space-y-4">
-                                        <FormLabel>How would you prefer to be contacted? *</FormLabel>
-                                        <FormControl>
-                                            <RadioGroup
-                                                onValueChange={field.onChange}
-                                                value={field.value}
-                                                className="grid grid-cols-1 md:grid-cols-3 gap-4"
-                                            >
-                                                {contactMethods.map((method) => (
-                                                    <FormItem key={method.value}>
-                                                        <div className="flex items-center space-x-2">
-                                                            <RadioGroupItem
-                                                                value={method.value}
-                                                                id={method.value}
-                                                                className="sr-only"
-                                                            />
-                                                            <label
-                                                                htmlFor={method.value}
-                                                                className={`flex-1 cursor-pointer rounded-lg border-2 p-4 transition-all ${field.value === method.value
-                                                                    ? 'border-primary bg-primary/5'
-                                                                    : 'border-muted hover:border-primary/50'
-                                                                    }`}
-                                                                style={{
-                                                                    borderRadius: currentTheme.components.card.borderRadius,
-                                                                    borderColor: field.value === method.value
-                                                                        ? currentTheme.colors.primary
-                                                                        : undefined,
-                                                                    backgroundColor: field.value === method.value
-                                                                        ? `${currentTheme.colors.primary}05`
-                                                                        : undefined
-                                                                }}
-                                                            >
-                                                                <div className="flex flex-col items-center text-center space-y-2">
-                                                                    <method.icon
-                                                                        className="h-6 w-6"
-                                                                        style={{
-                                                                            color: field.value === method.value
-                                                                                ? currentTheme.colors.primary
-                                                                                : undefined
-                                                                        }}
-                                                                    />
-                                                                    <div>
-                                                                        <div className="font-medium">{method.label}</div>
-                                                                        <div className="text-xs text-muted-foreground">
-                                                                            {method.description}
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </label>
-                                                        </div>
-                                                    </FormItem>
-                                                ))}
-                                            </RadioGroup>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                    {/* Event Details */}
+                    <Card className="theme-card" style={{ borderRadius: currentTheme.components.card.borderRadius }}>
+                        <CardContent className="p-4">
+                            <h4 className="font-semibold mb-3 flex items-center gap-2">
+                                <PartyPopper className="w-4 h-4" style={{ color: currentTheme.colors.accent }} />
+                                Event Details
+                            </h4>
+
+                            {/* First row: Event Type, Date, Guest Count */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <FormField
+                                    control={form.control}
+                                    name="eventType"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Event Type *</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger className="theme-input">
+                                                        <SelectValue placeholder="Select type" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {eventTypes.map((type) => (
+                                                        <SelectItem key={type.value} value={type.value}>
+                                                            {type.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="eventDate"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Event Date *</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="date"
+                                                    className="theme-input"
+                                                    style={{ borderRadius: currentTheme.components.input.borderRadius }}
+                                                    autoComplete="bday"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="guestCount"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Guest Count *</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger className="theme-input">
+                                                        <SelectValue placeholder="Select count" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {guestCounts.map((count) => (
+                                                        <SelectItem key={count.value} value={count.value}>
+                                                            {count.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            {/* Second row: Location and Budget */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="location"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="flex items-center gap-2">
+                                                <MapPin className="w-4 h-4" />
+                                                Event Location *
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="Venue, address, or location..."
+                                                    className="theme-input"
+                                                    style={{ borderRadius: currentTheme.components.input.borderRadius }}
+                                                    autoComplete="address-line1"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="budgetRange"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="flex items-center gap-2">
+                                                <DollarSign className="w-4 h-4" />
+                                                Floral Budget (Optional)
+                                            </FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger className="theme-input">
+                                                        <SelectValue placeholder="Select budget range" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {budgetRanges.map((budget) => (
+                                                        <SelectItem key={budget.value} value={budget.value}>
+                                                            {budget.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
                         </CardContent>
                     </Card>
 
                     {/* Privacy Note */}
                     <div
-                        className="text-center text-sm text-muted-foreground p-4 rounded-lg"
-                        style={{ backgroundColor: `${currentTheme.colors.muted}50` }}
+                        className="text-center text-xs text-muted-foreground p-3 rounded-lg"
+                        style={{ backgroundColor: `${currentTheme.colors.muted}30` }}
                     >
                         🔒 Your information is secure and will only be used to provide you with the best possible service.
-                        We never share your details with third parties.
                     </div>
                 </form>
             </Form>

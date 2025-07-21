@@ -25,8 +25,8 @@ export function StepNavigation({
     const { currentTheme } = useTheme();
 
     const isFirstStep = currentStep === 1;
-    const isLastFormStep = currentStep === 5;
-    const formSteps = 5;
+    const isLastFormStep = currentStep === 2; // Now step 2 is the last form step
+    const formSteps = 2; // Only 2 actual form steps
     const isPersonalDetailsStep = currentStep === 1;
 
     return (
@@ -59,8 +59,8 @@ export function StepNavigation({
             </div>
 
             <div className="flex gap-3">
-                {/* Skip button - show for all steps except personal details and preview */}
-                {!isPersonalDetailsStep && canSkip && onSkip && (
+                {/* Skip button - show for design preferences step only */}
+                {currentStep === 2 && canSkip && onSkip && (
                     <Button
                         variant="ghost"
                         onClick={onSkip}

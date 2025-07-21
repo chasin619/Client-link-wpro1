@@ -2,14 +2,12 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export interface OnboardingData {
-  // Step 1: Personal Details
+  // Step 1: Personal & Event Details
   brideName?: string;
   groomName?: string;
   email?: string;
   phone?: string;
   preferredContact?: "email" | "phone" | "text";
-
-  // Step 2: Event Details
   eventDate?: string;
   eventTime?: string;
   eventType?: "wedding" | "engagement" | "anniversary" | "other";
@@ -17,7 +15,16 @@ export interface OnboardingData {
   guestCount?: number;
   isOutdoorVenue?: boolean;
 
-  // Step 3: Service Selection
+  // Step 2: Design Preferences & Services
+  colorScheme?: {
+    primary?: string;
+    secondary?: string;
+    accent?: string;
+  };
+  style?: "romantic" | "modern" | "rustic" | "luxury" | "boho" | "classic";
+  flowerPreferences?: string[];
+  inspiration?: File[];
+  inspirationUrls?: string[];
   services?: string[];
   ceremony?: {
     needed: boolean;
@@ -41,31 +48,6 @@ export interface OnboardingData {
     corsages?: boolean;
     flowerGirl?: boolean;
   };
-
-  // Step 4: Design Preferences
-  colorScheme?: {
-    primary?: string;
-    secondary?: string;
-    accent?: string;
-  };
-  style?: "romantic" | "modern" | "rustic" | "luxury" | "boho" | "classic";
-  flowerPreferences?: string[];
-  inspiration?: File[];
-  inspirationUrls?: string[];
-
-  // Step 5: Additional Information
-  budgetRange?:
-    | "under-2000"
-    | "2000-5000"
-    | "5000-10000"
-    | "10000-20000"
-    | "over-20000";
-  timeline?: "urgent" | "1-3months" | "3-6months" | "6-12months" | "over-year";
-  referralSource?: string;
-  specialRequests?: string;
-  allergies?: string;
-  previousFlorist?: boolean;
-  consultationPreference?: "in-person" | "video" | "phone";
 
   // Meta
   currentStep: number;
@@ -93,7 +75,7 @@ interface OnboardingStore {
 
 const initialData: OnboardingData = {
   currentStep: 1,
-  totalSteps: 6,
+  totalSteps: 3, // 2 steps + 1 preview step
   isCompleted: false,
   ceremony: { needed: false },
   reception: { needed: false },
@@ -123,8 +105,8 @@ export const useOnboardingStore = create<OnboardingStore>()(
           data: {
             ...state.data,
             currentStep:
-              state.data.currentStep === 5
-                ? 6 // Go to preview step after step 5
+              state.data.currentStep === 2
+                ? 3 // Go to preview step after step 2
                 : Math.min(state.data.currentStep + 1, state.data.totalSteps),
           },
         })),
@@ -147,12 +129,12 @@ export const useOnboardingStore = create<OnboardingStore>()(
 
       goToPreview: () =>
         set((state) => ({
-          data: { ...state.data, currentStep: 6 },
+          data: { ...state.data, currentStep: 3 },
         })),
 
       goBackFromPreview: () =>
         set((state) => ({
-          data: { ...state.data, currentStep: 5 },
+          data: { ...state.data, currentStep: 2 },
         })),
 
       setSessionId: (sessionId) =>

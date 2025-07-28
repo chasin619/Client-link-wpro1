@@ -45,3 +45,61 @@ export interface StyleOption {
   colors: string[];
   keywords: string[];
 }
+
+// Database schema interfaces
+export interface VendorArrangement {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  imageFilename: string | null;
+  costPerMin: number;
+  labourTime: number;
+  labourCost: number;
+  itemCost: number;
+  profit: number;
+  margin: number;
+  vendorId: number;
+  isShared: boolean;
+  updatedAt: string;
+  type: {
+    id: number;
+    name: string;
+    vendorId: number;
+    isShared: boolean;
+  };
+  colors: Array<{
+    id: number;
+    name: string;
+    hexCode: string;
+    vendorId: number;
+    isShared: boolean;
+  }>;
+  ingredientCount: number;
+  previewIngredients: Array<{
+    quantity: number;
+    flower: {
+      id: number;
+      name: string;
+      imageFilename: string | null;
+      userId: number;
+      isShared: boolean;
+    };
+  }>;
+}
+
+export interface ArrangementType {
+  id: number;
+  name: string;
+  vendorId: number;
+  isShared: boolean;
+}
+
+export interface ServiceCategory {
+  id: string;
+  title: string;
+  icon: any;
+  description: string;
+  color: string;
+  arrangements: VendorArrangement[];
+}

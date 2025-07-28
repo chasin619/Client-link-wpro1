@@ -1,0 +1,476 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model VendorUser {
+  id                      Int                       @id @default(autoincrement())
+  full_name               String
+  business_name           String                    @unique
+  business_email          String                    @unique
+  password                String
+  phone                   String                    @unique
+  business_address        String
+  website                 String
+  customerId              String?                   @unique
+  subscriptionId          String?
+  resetToken              String?
+  resetTokenExpiry        DateTime?
+  role                    String?
+  subscriptionPlan        Json
+  status                  ClientStatus              @default(pending)
+  arrangements            Arrangement[]
+  arrangementTypes        ArrangementType[]         @relation("VendorArrangementTypes")
+  breakDownPrices         BreakDownPrice[]          @relation("VendorBreakDownPrices")
+  colors                  Color[]
+  Contracts               Contracts[]
+  deliverySetupPrices     DeliverySetupPrice[]      @relation("VendorDeliverySetupPrices")
+  depositAmount           DepositAmount?            @relation("VendorDepositAmount")
+  DesignTemplate          DesignTemplate[]
+  Event                   Event[]
+  eventTypes              EventType[]               @relation("VendorEventTypes")
+  flowers                 Flower[]
+  flowerCategories        FlowerCategory[]          @relation("VendorFlowerCategories")
+  laborCost               LaborCost?                @relation("VendorLaborCost")
+  Letters                 Letters[]
+  PreviewBackgroundImages PreviewBackgroundImages[]
+  PreviewHeroImages       PreviewHeroImages[]
+  transferPrices          TransferPrice[]           @relation("VendorTransferPrices")
+  vendorClients           VendorClient[]
+  clients                 ClientUser[]              @relation("VendorClients")
+  // Chat relations
+  chatsAsVendor           Chat[]                    @relation("VendorChats")
+  sentMessages            Message[]                 @relation("VendorMessages")
+}
+
+model Flower {
+  id                    Int                     @id @default(autoincrement())
+  name                  String
+  colorId               Int
+  stemsPerBunch         Int
+  costPerStem           Float
+  costPerBunch          Float
+  supplier              String?
+  imageFilename         String?
+  userId                Int
+  flowerCategoryId      Int
+  createdAt             DateTime                @default(now())
+  isShared              Boolean                 @default(false)
+  ArrangementIngredient ArrangementIngredient[]
+  color                 Color                   @relation(fields: [colorId], references: [id], onDelete: Cascade)
+  flowerCategory        FlowerCategory          @relation(fields: [flowerCategoryId], references: [id], onDelete: Cascade)
+  user                  VendorUser              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([colorId])
+  @@index([flowerCategoryId])
+}
+
+model ClientUser {
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  name          String?
+  phone         String         @unique
+  password      String
+  Event         Event[]
+  vendorClients VendorClient[]
+  vendors       VendorUser[]   @relation("VendorClients")
+  // Chat relations
+  chatsAsClient Chat[]         @relation("ClientChats")
+  sentMessages  Message[]      @relation("ClientMessages")
+}
+
+model Admin {
+  id       Int    @id @default(autoincrement())
+  email    String @unique
+  password String
+}
+
+model VendorClient {
+  id        Int         @id @default(autoincrement())
+  vendorId  Int
+  clientId  Int
+  Signature Signature[]
+  client    ClientUser  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  vendor    VendorUser  @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@unique([vendorId, clientId])
+}
+
+// New Chat Models
+model Chat {
+  id            Int       @id @default(autoincrement())
+  vendorId      Int
+  clientId      Int
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastMessageAt DateTime?
+  isActive      Boolean   @default(true)
+
+  vendor   VendorUser @relation("VendorChats", fields: [vendorId], references: [id], onDelete: Cascade)
+  client   ClientUser @relation("ClientChats", fields: [clientId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@unique([vendorId, clientId])
+  @@index([vendorId])
+  @@index([clientId])
+  @@index([lastMessageAt])
+}
+
+model Message {
+  id             Int         @id @default(autoincrement())
+  chatId         Int
+  content        String
+  vendorSenderId Int?
+  clientSenderId Int?
+  senderType     SenderType
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  isRead         Boolean     @default(false)
+  messageType    MessageType @default(TEXT)
+  attachmentUrl  String?
+  attachmentType String?
+
+  chat         Chat        @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  vendorSender VendorUser? @relation("VendorMessages", fields: [vendorSenderId], references: [id], onDelete: Cascade, map: "Message_vendorSender_fkey")
+  clientSender ClientUser? @relation("ClientMessages", fields: [clientSenderId], references: [id], onDelete: Cascade, map: "Message_clientSender_fkey")
+
+  @@index([chatId])
+  @@index([vendorSenderId])
+  @@index([clientSenderId])
+  @@index([createdAt])
+  @@index([isRead])
+}
+
+model FlowerCategory {
+  id          Int        @id @default(autoincrement())
+  name        String
+  description String?
+  vendorId    Int
+  isShared    Boolean    @default(false)
+  flowers     Flower[]
+  vendor      VendorUser @relation("VendorFlowerCategories", fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId])
+}
+
+model TransferPrice {
+  id       Int        @id @default(autoincrement())
+  name     String
+  price    Float
+  vendorId Int
+  isShared Boolean    @default(false)
+  Event    Event[]
+  vendor   VendorUser @relation("VendorTransferPrices", fields: [vendorId], references: [id], onDelete: Cascade)
+}
+
+model DeliverySetupPrice {
+  id       Int        @id @default(autoincrement())
+  name     String
+  price    Float
+  vendorId Int
+  isShared Boolean    @default(false)
+  vendor   VendorUser @relation("VendorDeliverySetupPrices", fields: [vendorId], references: [id], onDelete: Cascade)
+  Event    Event[]
+}
+
+model LaborCost {
+  id            Int        @id @default(autoincrement())
+  costPerHour   Float
+  costPerMinute Float
+  vendorId      Int        @unique
+  isShared      Boolean    @default(false)
+  vendor        VendorUser @relation("VendorLaborCost", fields: [vendorId], references: [id], onDelete: Cascade)
+}
+
+model DepositAmount {
+  id       Int        @id @default(autoincrement())
+  deposit  Float
+  vendorId Int        @unique
+  isShared Boolean    @default(false)
+  vendor   VendorUser @relation("VendorDepositAmount", fields: [vendorId], references: [id], onDelete: Cascade)
+}
+
+model ArrangementType {
+  id          Int           @id @default(autoincrement())
+  name        String
+  vendorId    Int
+  isShared    Boolean       @default(false)
+  Arrangement Arrangement[]
+  vendor      VendorUser    @relation("VendorArrangementTypes", fields: [vendorId], references: [id], onDelete: Cascade)
+}
+
+model BreakDownPrice {
+  id       Int        @id @default(autoincrement())
+  name     String
+  price    Float
+  vendorId Int
+  isShared Boolean    @default(false)
+  vendor   VendorUser @relation("VendorBreakDownPrices", fields: [vendorId], references: [id], onDelete: Cascade)
+  Event    Event[]
+}
+
+model Color {
+  id           Int           @id @default(autoincrement())
+  name         String
+  hexCode      String
+  vendorId     Int
+  isShared     Boolean       @default(false)
+  vendor       VendorUser    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  flowers      Flower[]
+  arrangements Arrangement[] @relation("ArrangementColors")
+
+  @@unique([name, vendorId])
+}
+
+model Arrangement {
+  id                    Int                     @id @default(autoincrement())
+  name                  String
+  typeId                Int
+  description           String
+  price                 Float
+  imageFilename         String?
+  createdAt             DateTime                @default(now())
+  costPerMin            Float                   @default(0)
+  labourTime            Float                   @default(0)
+  labourCost            Float                   @default(0)
+  itemCost              Float                   @default(0)
+  profit                Float                   @default(0)
+  margin                Float                   @default(0)
+  vendorId              Int                     @default(0)
+  isShared              Boolean                 @default(false)
+  updatedAt             DateTime                @default(now()) @updatedAt
+  type                  ArrangementType         @relation(fields: [typeId], references: [id], onDelete: Cascade)
+  user                  VendorUser              @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  ArrangementIngredient ArrangementIngredient[]
+  EventArrangement      EventArrangement[]
+  colors                Color[]                 @relation("ArrangementColors")
+
+  @@index([typeId])
+  @@index([vendorId])
+}
+
+model EventType {
+  id          Int           @id @default(autoincrement())
+  name        String
+  vendorId    Int
+  isShared    Boolean       @default(false)
+  Event       Event[]
+  EventDesign EventDesign[]
+  vendor      VendorUser    @relation("VendorEventTypes", fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId])
+}
+
+model ArrangementIngredient {
+  arrangementId Int
+  flowerId      Int
+  quantity      Int
+  arrangement   Arrangement @relation(fields: [arrangementId], references: [id], onDelete: Cascade)
+  flower        Flower      @relation(fields: [flowerId], references: [id], onDelete: Cascade)
+
+  @@id([arrangementId, flowerId])
+}
+
+model Event {
+  id               Int                 @id @default(autoincrement())
+  clientId         Int
+  vendorId         Int
+  eventTypeId      Int?
+  weddingDate      DateTime?
+  totalPrice       Float?
+  laborTime        Int?
+  setupPriceId     Int?
+  breakdownPriceId Int?
+  transferPriceId  Int?
+  miscItemsCost    Float?
+  createdAt        DateTime            @default(now())
+  status           Status              @default(Pending)
+  NumberOfGuests   Int?
+  brideName        String?
+  groomName        String?
+  location         String?
+  referredBy       String?
+  updatedAt        DateTime            @default(now()) @updatedAt
+  isShared         Boolean             @default(false)
+  backgroundImage  String              @default("https://s3.us-east-2.amazonaws.com/wpro.ai/backgroundImages/pexels-fu-zhichao-176355-587741.jpg")
+  heroImage        String              @default("https://s3.us-east-2.amazonaws.com/wpro.ai/backgroundImages/pexels-fu-zhichao-176355-587741.jpg")
+  clientSign       String?
+  breakdownPrice   BreakDownPrice?     @relation(fields: [breakdownPriceId], references: [id])
+  client           ClientUser          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  eventType        EventType?          @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
+  setupPrice       DeliverySetupPrice? @relation(fields: [setupPriceId], references: [id])
+  transferPrice    TransferPrice?      @relation(fields: [transferPriceId], references: [id])
+  vendor           VendorUser          @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  arrangements     EventArrangement[]
+  eventDesigns     EventDesign[]
+  eventDetails     EventDetail[]
+  inspirations     Inspiration[]
+  Signature        Signature[]
+
+  @@index([clientId])
+  @@index([vendorId])
+  @@index([eventTypeId])
+  @@index([setupPriceId])
+  @@index([breakdownPriceId])
+  @@index([transferPriceId])
+}
+
+model PreviewBackgroundImages {
+  id        Int        @id @default(autoincrement())
+  src       String
+  isShared  Boolean    @default(false)
+  vendorId  Int
+  isDefault Boolean    @default(false)
+  vendor    VendorUser @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+}
+
+model PreviewHeroImages {
+  id        Int        @id @default(autoincrement())
+  src       String
+  isShared  Boolean    @default(false)
+  vendorId  Int
+  isDefault Boolean    @default(false)
+  vendor    VendorUser @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+}
+
+model EventArrangement {
+  id                     Int          @id @default(autoincrement())
+  eventId                Int?
+  arrangementId          Int?
+  section                SectionType
+  slotName               String?
+  slotNo                 Int?
+  defaultArrangementType Int?
+  quantity               Int?
+  arrangement            Arrangement? @relation(fields: [arrangementId], references: [id], onDelete: Cascade)
+  event                  Event?       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, section, slotNo])
+}
+
+model DesignTemplate {
+  id        Int        @id @default(autoincrement())
+  vendorId  Int
+  isDefault Boolean    @default(false)
+  name      String
+  isShared  Boolean    @default(false)
+  vendor    VendorUser @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  slots     Slots[]
+}
+
+model Slots {
+  id                     Int             @id @default(autoincrement())
+  vendorId               Int
+  templateId             Int?
+  eventId                Int?
+  arrangementId          Int?
+  section                SectionType
+  slotNo                 Int?            @default(autoincrement())
+  slotName               String?
+  defaultArrangementType Int?
+  isShared               Boolean         @default(false)
+  designTemplate         DesignTemplate? @relation(fields: [templateId], references: [id], onDelete: Cascade)
+}
+
+model EventDetail {
+  id             Int       @id @default(autoincrement())
+  eventId        Int
+  section        String
+  startTime      DateTime
+  setupStartTime DateTime?
+  location       String
+  event          Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model EventDesign {
+  id          Int       @id @default(autoincrement())
+  eventId     Int
+  eventTypeId Int
+  eventColors Json
+  designCost  Float
+  event       Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventType   EventType @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
+}
+
+model Inspiration {
+  id         Int      @id @default(autoincrement())
+  eventId    Int
+  imageUrl   String
+  uploadDate DateTime @default(now())
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model Letters {
+  id        Int        @id @unique @default(autoincrement())
+  title     String
+  content   String
+  vendorId  Int
+  isDefault Boolean
+  isShared  Boolean    @default(false)
+  vendor    VendorUser @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+}
+
+model Contracts {
+  id        Int        @id @unique @default(autoincrement())
+  title     String
+  content   String
+  isDefault Boolean
+  vendorId  Int
+  isShared  Boolean    @default(false)
+  vendor    VendorUser @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+}
+
+model Signature {
+  id            Int          @id @default(autoincrement())
+  eventId       Int
+  clientId      Int
+  signatureData String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  client        VendorClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  event         Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, clientId])
+}
+
+// New Enums for Chat
+enum SenderType {
+  VENDOR
+  CLIENT
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  SYSTEM
+}
+
+enum SectionType {
+  Personal
+  Ceremony
+  Reception
+  Suggestion
+}
+
+enum Status {
+  Inquiry
+  ReadyToSign
+  Pending
+  Signed
+  Booked
+  VendorApprovalNeeded
+  ApprovedAfterBooked
+}
+
+enum ClientStatus {
+  active
+  pending
+  onhold
+}

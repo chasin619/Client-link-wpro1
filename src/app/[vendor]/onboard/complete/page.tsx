@@ -19,14 +19,12 @@ export default function CompletePage({ params }: CompletePageProps) {
     const { currentTheme } = useTheme();
     const [vendor, setVendor] = useState<string>('');
 
-    // Resolve params Promise
     useEffect(() => {
         params.then((resolvedParams) => {
             setVendor(resolvedParams.vendor);
         });
     }, [params]);
 
-    // Redirect if onboarding not completed
     useEffect(() => {
         if (!data.isCompleted && vendor) {
             router.push(`/${vendor}/onboard`);

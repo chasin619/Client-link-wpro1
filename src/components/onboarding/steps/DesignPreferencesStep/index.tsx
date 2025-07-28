@@ -10,12 +10,12 @@ import { useTheme } from '@/hooks/use-theme';
 import { designPreferencesSchema, DesignPreferencesForm } from './types';
 import { StyleSelection } from './StyleSelection';
 import { ColorPreferences } from './ColorPreferences';
-import { FlowerPreferences } from './FlowerPreferences';
 import { ServicesSelection } from './ServicesSelection';
 import { InspirationSection } from './InspirationSection';
 
-export function DesignPreferencesStep() {
+export function DesignPreferencesStep({ vendorId }) {
     const { data, updateData } = useOnboardingStore();
+    console.log(data)
     const { currentTheme } = useTheme();
     const [selectedFlowers, setSelectedFlowers] = useState<string[]>(data.flowerPreferences || []);
 
@@ -46,27 +46,22 @@ export function DesignPreferencesStep() {
 
             <Form {...form}>
                 <form className="space-y-6">
-                    <StyleSelection control={form.control} />
+                    {/* <StyleSelection control={form.control} /> */}
 
                     <ColorPreferences
                         control={form.control}
+                        vendorId={vendorId}
+                        eventId={data.inquiryId
+                        }
                         setValue={form.setValue}
                     />
 
-                    <FlowerPreferences
-                        selectedFlowers={selectedFlowers}
-                        onToggleFlower={(flower) => {
-                            setSelectedFlowers(prev =>
-                                prev.includes(flower)
-                                    ? prev.filter(f => f !== flower)
-                                    : [...prev, flower]
-                            );
-                        }}
-                    />
 
                     <ServicesSelection
                         control={form.control}
                         setValue={form.setValue}
+                        eventId={data.inquiryId}
+                        vendorId={vendorId}
                         getValues={form.getValues}
                         watchServices={form.watch('services')}
                         watchCeremony={form.watch('ceremony')}
@@ -75,6 +70,8 @@ export function DesignPreferencesStep() {
                     />
 
                     <InspirationSection
+                        eventId={data.inquiryId}
+
                         control={form.control}
                         setValue={form.setValue}
                         getValues={form.getValues}

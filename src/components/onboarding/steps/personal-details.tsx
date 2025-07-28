@@ -3,14 +3,19 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useEffect } from 'react';
-import { Heart, Mail, Phone, MessageSquare, Calendar, MapPin, PartyPopper, Users, DollarSign } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Heart, Mail, Phone, MessageSquare, Calendar, MapPin, PartyPopper, Users, DollarSign, Loader2 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useOnboardingStore } from '@/store/use-onboarding-store';
 import { useTheme } from '@/hooks/use-theme';
+import { useVendorBySlug, useVendorEventTypes } from '@/hooks/useVendor';
+import { useCreateInquiry } from '@/hooks/useInquiry';
+import { toast } from 'sonner';
 
 const personalDetailsSchema = z.object({
     brideName: z.string().min(2, 'Bride name must be at least 2 characters'),
@@ -26,9 +31,34 @@ const personalDetailsSchema = z.object({
 
 type PersonalDetailsForm = z.infer<typeof personalDetailsSchema>;
 
-export function PersonalDetailsStep() {
+interface PersonalDetailsStepProps {
+    vendorSlug: string;
+    onInquiryCreated?: (inquiryId: number) => void;
+}
+
+export function PersonalDetailsStep({
+    vendorSlug,
+    onInquiryCreated
+}: PersonalDetailsStepProps) {
     const { data, updateData } = useOnboardingStore();
     const { currentTheme } = useTheme();
+
+    // React Query hooks
+    const {
+        data: vendorData,
+        isLoading: isVendorLoading,
+        error: vendorError
+    } = useVendorBySlug(vendorSlug);
+
+    const vendorId = vendorData?.vendor?.id;
+    const {
+        data: eventTypesData,
+        isLoading: isEventTypesLoading
+    } = useVendorEventTypes(vendorId!);
+
+    const createInquiryMutation = useCreateInquiry();
+
+    const [inquiryCreated, setInquiryCreated] = useState(false);
 
     const form = useForm<PersonalDetailsForm>({
         resolver: zodResolver(personalDetailsSchema),
@@ -41,7 +71,7 @@ export function PersonalDetailsStep() {
             eventDate: data.eventDate || '',
             location: data.venue || '',
             guestCount: data.guestCount?.toString() || '',
-            budgetRange: data.budgetRange || '',
+
         },
     });
 
@@ -57,13 +87,64 @@ export function PersonalDetailsStep() {
         return () => subscription.unsubscribe();
     }, [form, updateData]);
 
-    const eventTypes = [
-        { value: 'wedding', label: 'Wedding' },
-        { value: 'engagement', label: 'Engagement' },
-        { value: 'anniversary', label: 'Anniversary' },
-        { value: 'birthday', label: 'Birthday' },
-        { value: 'corporate', label: 'Corporate Event' },
-        { value: 'other', label: 'Other' },
+    // Handle successful inquiry creation
+    useEffect(() => {
+        if (createInquiryMutation.isSuccess && createInquiryMutation.data) {
+            setInquiryCreated(true);
+            toast.success(createInquiryMutation.data.message);
+
+            if (onInquiryCreated) {
+                onInquiryCreated(createInquiryMutation.data.data.inquiryId);
+            }
+        }
+    }, [createInquiryMutation.isSuccess, createInquiryMutation.data, onInquiryCreated]);
+
+    // Handle errors
+    useEffect(() => {
+        if (createInquiryMutation.error) {
+            const error = createInquiryMutation.error;
+            if (error.errors) {
+                error.errors.forEach((err: any) => {
+                    toast.error(`${err.path.join('.')}: ${err.message}`);
+                });
+            } else {
+                toast.error(error.message || 'Failed to create inquiry');
+            }
+        }
+    }, [createInquiryMutation.error]);
+    useEffect(() => {
+        if (data.inquiryId) {
+            setInquiryCreated(true);
+        }
+    }, [data.inquiryId]);
+
+    const onSubmit = async (formData: PersonalDetailsForm) => {
+        if (!vendorData?.vendor) {
+            toast.error('Vendor information not available');
+            return;
+        }
+
+        if (inquiryCreated || data.inquiryId) {
+            return; // Already created
+        }
+
+        createInquiryMutation.mutate({
+            ...formData,
+            vendorId: vendorData.vendor.id,
+            referredBy: data.referredBy,
+        });
+    };
+
+    const isLoading = isVendorLoading || isEventTypesLoading;
+
+    // Get event types - use vendor's types or fallback to defaults
+    const eventTypes = eventTypesData?.eventTypes || [
+        { id: null, name: 'wedding' },
+        { id: null, name: 'engagement' },
+        { id: null, name: 'anniversary' },
+        { id: null, name: 'birthday' },
+        { id: null, name: 'corporate' },
+        { id: null, name: 'other' },
     ];
 
     const guestCounts = [
@@ -85,10 +166,49 @@ export function PersonalDetailsStep() {
         { value: 'prefer-not-to-say', label: 'Prefer not to say' },
     ];
 
+    if (isLoading) {
+        return (
+            <div className="space-y-6">
+                <div className="text-center">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">Loading vendor information...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (vendorError) {
+        return (
+            <Alert variant="destructive">
+                <AlertDescription>
+                    Unable to load vendor information. Please try refreshing the page.
+                </AlertDescription>
+            </Alert>
+        );
+    }
+
     return (
         <div className="space-y-6">
             <Form {...form}>
-                <form className="space-y-4" autoComplete="on">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" autoComplete="on">
+                    {/* Success Alert */}
+                    {inquiryCreated && (
+                        <Alert className="border-green-200 bg-green-50">
+                            <AlertDescription className="text-green-800">
+                                ✅ Your inquiry has been created successfully! You can now continue with your preferences.
+                            </AlertDescription>
+                        </Alert>
+                    )}
+
+                    {/* Error Alert */}
+                    {createInquiryMutation.error && (
+                        <Alert variant="destructive">
+                            <AlertDescription>
+                                {createInquiryMutation.error.message || 'Failed to create inquiry. Please try again.'}
+                            </AlertDescription>
+                        </Alert>
+                    )}
+
                     {/* Basic Information */}
                     <Card className="theme-card" style={{ borderRadius: currentTheme.components.card.borderRadius }}>
                         <CardContent className="p-4">
@@ -105,6 +225,7 @@ export function PersonalDetailsStep() {
                                                     className="theme-input"
                                                     style={{ borderRadius: currentTheme.components.input.borderRadius }}
                                                     autoComplete="given-name"
+                                                    disabled={createInquiryMutation.isPending || inquiryCreated}
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -125,6 +246,7 @@ export function PersonalDetailsStep() {
                                                     className="theme-input"
                                                     style={{ borderRadius: currentTheme.components.input.borderRadius }}
                                                     autoComplete="family-name"
+                                                    disabled={createInquiryMutation.isPending || inquiryCreated}
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -146,6 +268,7 @@ export function PersonalDetailsStep() {
                                                     className="theme-input"
                                                     style={{ borderRadius: currentTheme.components.input.borderRadius }}
                                                     autoComplete="email"
+                                                    disabled={createInquiryMutation.isPending || inquiryCreated}
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -167,6 +290,7 @@ export function PersonalDetailsStep() {
                                                     className="theme-input"
                                                     style={{ borderRadius: currentTheme.components.input.borderRadius }}
                                                     autoComplete="tel"
+                                                    disabled={createInquiryMutation.isPending || inquiryCreated}
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -194,7 +318,11 @@ export function PersonalDetailsStep() {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Event Type *</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <Select
+                                                onValueChange={field.onChange}
+                                                defaultValue={field.value}
+                                                disabled={createInquiryMutation.isPending || inquiryCreated}
+                                            >
                                                 <FormControl>
                                                     <SelectTrigger className="theme-input">
                                                         <SelectValue placeholder="Select type" />
@@ -202,8 +330,8 @@ export function PersonalDetailsStep() {
                                                 </FormControl>
                                                 <SelectContent>
                                                     {eventTypes.map((type) => (
-                                                        <SelectItem key={type.value} value={type.value}>
-                                                            {type.label}
+                                                        <SelectItem key={type.name} value={type.name}>
+                                                            {type.name.charAt(0).toUpperCase() + type.name.slice(1)}
                                                         </SelectItem>
                                                     ))}
                                                 </SelectContent>
@@ -225,6 +353,7 @@ export function PersonalDetailsStep() {
                                                     className="theme-input"
                                                     style={{ borderRadius: currentTheme.components.input.borderRadius }}
                                                     autoComplete="bday"
+                                                    disabled={createInquiryMutation.isPending || inquiryCreated}
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -239,7 +368,11 @@ export function PersonalDetailsStep() {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Guest Count *</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <Select
+                                                onValueChange={field.onChange}
+                                                defaultValue={field.value}
+                                                disabled={createInquiryMutation.isPending || inquiryCreated}
+                                            >
                                                 <FormControl>
                                                     <SelectTrigger className="theme-input">
                                                         <SelectValue placeholder="Select count" />
@@ -276,6 +409,7 @@ export function PersonalDetailsStep() {
                                                     className="theme-input"
                                                     style={{ borderRadius: currentTheme.components.input.borderRadius }}
                                                     autoComplete="address-line1"
+                                                    disabled={createInquiryMutation.isPending || inquiryCreated}
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -293,7 +427,11 @@ export function PersonalDetailsStep() {
                                                 <DollarSign className="w-4 h-4" />
                                                 Floral Budget (Optional)
                                             </FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <Select
+                                                onValueChange={field.onChange}
+                                                defaultValue={field.value}
+                                                disabled={createInquiryMutation.isPending || inquiryCreated}
+                                            >
                                                 <FormControl>
                                                     <SelectTrigger className="theme-input">
                                                         <SelectValue placeholder="Select budget range" />
@@ -314,6 +452,30 @@ export function PersonalDetailsStep() {
                             </div>
                         </CardContent>
                     </Card>
+
+                    {/* Submit Button */}
+                    {!inquiryCreated && (
+                        <div className="flex justify-center">
+                            <Button
+                                type="submit"
+                                disabled={createInquiryMutation.isPending || !form.formState.isValid}
+                                className="px-8 py-2"
+                                style={{
+                                    backgroundColor: currentTheme.colors.primary,
+                                    borderRadius: currentTheme.components.button.borderRadius
+                                }}
+                            >
+                                {createInquiryMutation.isPending ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Creating Inquiry...
+                                    </>
+                                ) : (
+                                    'Create Inquiry'
+                                )}
+                            </Button>
+                        </div>
+                    )}
 
                     {/* Privacy Note */}
                     <div

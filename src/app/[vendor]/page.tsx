@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { HeroSection } from '@/components/vendor/hero-section';
 import { ServicesGrid } from '@/components/vendor/services-grid';
 import { PortfolioGallery } from '@/components/vendor/portfolio-gallery';
-import { getVendorBySlug } from '@/lib/queries';
+import { getVendorBySlug } from '@/lib/vendor';
 
 interface VendorPageProps {
     params: Promise<{ vendor: string }>;

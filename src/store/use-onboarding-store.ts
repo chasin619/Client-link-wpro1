@@ -71,16 +71,20 @@ interface OnboardingStore {
   setSessionId: (sessionId: string) => void;
   setVendorSlug: (vendorSlug: string) => void;
   markCompleted: () => void;
+  inquiryId?: number;
+  clientId?: number;
+  referredBy?: string;
+  location?: string;
+  budgetRange?: string;
 }
 
 const initialData: OnboardingData = {
   currentStep: 1,
-  totalSteps: 3, // 2 steps + 1 preview step
+  totalSteps: 3,
   isCompleted: false,
   ceremony: { needed: false },
   reception: { needed: false },
   personal: { needed: false },
-  services: [],
   flowerPreferences: [],
   inspiration: [],
   inspirationUrls: [],

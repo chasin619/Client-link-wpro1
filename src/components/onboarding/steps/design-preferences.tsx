@@ -11,7 +11,8 @@ import {
     Upload,
     X,
     Eye,
-    Link as LinkIcon
+    Link as LinkIcon,
+    Loader2
 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useOnboardingStore } from '@/store/use-onboarding-store';
 import { useTheme } from '@/hooks/use-theme';
+import {
+    useDesignData,
+    useVendorFlowers,
+    useVendorArrangements,
+    useVendorColors
+} from '@/hooks/useDesignData';
 
 const designPreferencesSchema = z.object({
     colorScheme: z.object({
@@ -36,11 +43,21 @@ const designPreferencesSchema = z.object({
 
 type DesignPreferencesForm = z.infer<typeof designPreferencesSchema>;
 
-export function DesignPreferencesStep() {
+interface DesignPreferencesStepProps {
+    vendorId: number; // Add this prop to get the vendor ID
+}
+
+export function DesignPreferencesStep({ vendorId }: DesignPreferencesStepProps) {
     const { data, updateData } = useOnboardingStore();
     const { currentTheme } = useTheme();
     const [newInspirationUrl, setNewInspirationUrl] = useState('');
     const [selectedFlowers, setSelectedFlowers] = useState<string[]>(data.flowerPreferences || []);
+
+    // React Query hooks
+    const { data: designData, isLoading: isLoadingDesign } = useDesignData(vendorId);
+    const { data: vendorFlowers, isLoading: isLoadingFlowers } = useVendorFlowers(vendorId);
+    const { data: vendorArrangements, isLoading: isLoadingArrangements } = useVendorArrangements(vendorId);
+    const { data: vendorColors, isLoading: isLoadingColors } = useVendorColors(vendorId);
 
     const form = useForm<DesignPreferencesForm>({
         resolver: zodResolver(designPreferencesSchema),
@@ -59,7 +76,8 @@ export function DesignPreferencesStep() {
         return () => subscription.unsubscribe();
     }, [form, updateData, selectedFlowers]);
 
-    const styles = [
+    // Default styles (fallback if API doesn't provide them)
+    const defaultStyles = [
         {
             id: 'romantic',
             name: 'Romantic',
@@ -104,14 +122,16 @@ export function DesignPreferencesStep() {
         },
     ];
 
-    const popularFlowers = [
+    // Default flowers (fallback if API doesn't provide them)
+    const defaultFlowers = [
         'Roses', 'Peonies', 'Hydrangeas', 'Eucalyptus', 'Baby\'s Breath',
         'Ranunculus', 'Anemones', 'Tulips', 'Lilies', 'Orchids',
         'Sunflowers', 'Delphiniums', 'Sweet Peas', 'Freesias', 'Carnations',
         'Chrysanthemums', 'Lavender', 'Succulents', 'Ferns', 'Ivy'
     ];
 
-    const colorPalettes = [
+    // Default color palettes (fallback if API doesn't provide them)
+    const defaultColorPalettes = [
         { name: 'Blush & Cream', colors: ['#FFB6C1', '#FFF8DC', '#F5F5DC'] },
         { name: 'Sage & White', colors: ['#9CAF88', '#FFFFFF', '#F0F8E8'] },
         { name: 'Dusty Blue', colors: ['#6B8CAE', '#E6F3FF', '#FFFFFF'] },
@@ -119,6 +139,11 @@ export function DesignPreferencesStep() {
         { name: 'Coral & Navy', colors: ['#FF7F7F', '#191970', '#FFFFFF'] },
         { name: 'Lavender & Gray', colors: ['#E6E6FA', '#808080', '#FFFFFF'] },
     ];
+
+    // Use API data or fallback to defaults
+    const styles = designData?.styles || defaultStyles;
+    const availableFlowers = vendorFlowers?.flowers || defaultFlowers;
+    const colorPalettes = vendorColors?.palettes || defaultColorPalettes;
 
     const toggleFlower = (flower: string) => {
         setSelectedFlowers(prev =>
@@ -141,10 +166,20 @@ export function DesignPreferencesStep() {
         form.setValue('inspirationUrls', currentUrls.filter((_, i) => i !== index));
     };
 
+    // Loading state
+    if (isLoadingDesign || isLoadingFlowers || isLoadingColors) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="flex items-center gap-2">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                    <span>Loading design preferences...</span>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-8">
-
-
             <Form {...form}>
                 <form className="space-y-6">
                     {/* Style Selection */}
@@ -240,16 +275,17 @@ export function DesignPreferencesStep() {
                                     style={{ color: currentTheme.colors.primary }}
                                 />
                                 Color Preferences
+                                {isLoadingColors && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             {/* Pre-defined Palettes */}
                             <div>
-                                <h5 className="font-medium mb-3">Popular Color Palettes</h5>
+                                <h5 className="font-medium mb-3">Available Color Palettes</h5>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                    {colorPalettes.map((palette) => (
+                                    {colorPalettes.map((palette, index) => (
                                         <div
-                                            key={palette.name}
+                                            key={palette.name || index}
                                             className="cursor-pointer p-3 border rounded-lg hover:border-primary/50 transition-all"
                                             onClick={() => {
                                                 form.setValue('colorScheme.primary', palette.colors[0]);
@@ -258,9 +294,9 @@ export function DesignPreferencesStep() {
                                             }}
                                         >
                                             <div className="flex gap-1 mb-2">
-                                                {palette.colors.map((color, index) => (
+                                                {palette.colors.map((color, colorIndex) => (
                                                     <div
-                                                        key={index}
+                                                        key={colorIndex}
                                                         className="w-6 h-6 rounded-full border border-white shadow-sm"
                                                         style={{ backgroundColor: color }}
                                                     />
@@ -367,33 +403,34 @@ export function DesignPreferencesStep() {
                                     style={{ color: currentTheme.colors.primary }}
                                 />
                                 Flower Preferences
+                                {isLoadingFlowers && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <p className="text-sm text-muted-foreground mb-4">
-                                Select flowers you love or would like to include in your arrangements:
+                                Select flowers available from this vendor that you'd like to include:
                             </p>
 
                             <div className="flex flex-wrap gap-2">
-                                {popularFlowers.map((flower) => (
+                                {availableFlowers.map((flower) => (
                                     <Button
-                                        key={flower}
+                                        key={typeof flower === 'string' ? flower : flower.name}
                                         type="button"
-                                        variant={selectedFlowers.includes(flower) ? "default" : "outline"}
+                                        variant={selectedFlowers.includes(typeof flower === 'string' ? flower : flower.name) ? "default" : "outline"}
                                         size="sm"
-                                        onClick={() => toggleFlower(flower)}
+                                        onClick={() => toggleFlower(typeof flower === 'string' ? flower : flower.name)}
                                         className="theme-button"
                                         style={{
-                                            backgroundColor: selectedFlowers.includes(flower)
+                                            backgroundColor: selectedFlowers.includes(typeof flower === 'string' ? flower : flower.name)
                                                 ? currentTheme.colors.primary
                                                 : 'transparent',
                                             borderColor: currentTheme.colors.primary,
-                                            color: selectedFlowers.includes(flower)
+                                            color: selectedFlowers.includes(typeof flower === 'string' ? flower : flower.name)
                                                 ? 'white'
                                                 : currentTheme.colors.primary,
                                         }}
                                     >
-                                        {flower}
+                                        {typeof flower === 'string' ? flower : flower.name}
                                     </Button>
                                 ))}
                             </div>
@@ -526,6 +563,6 @@ export function DesignPreferencesStep() {
                     </Card>
                 </form>
             </Form>
-        </div>
+        </div >
     );
 }

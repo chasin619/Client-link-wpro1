@@ -8,13 +8,16 @@ import { Badge } from '@/components/ui/badge';
 import { useOnboardingStore } from '@/store/use-onboarding-store';
 import { useAutoSave } from '@/hooks/use-auto-save';
 import { useTheme } from '@/hooks/use-theme';
+import { useVendorBySlug } from '@/hooks/useVendor';
 import { AutoSaveIndicator } from './auto-save-indicator';
 import { StepNavigation } from './step-navigation';
 import { PersonalDetailsStep } from './steps/personal-details';
 import { DesignPreferencesStep } from './steps/DesignPreferencesStep/index';
 import { PreviewSummary } from './steps/preview-summary';
 import { InquiryConfirmation } from './inquiry-confirmation';
-import { Flower2, Sparkles } from 'lucide-react';
+import { Flower2, Sparkles, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ChatWidget } from '../chat-widget/chat-widget';
 
 interface OnboardWizardProps {
     vendorSlug: string;
@@ -24,9 +27,19 @@ export function OnboardWizard({ vendorSlug }: OnboardWizardProps) {
     const router = useRouter();
     const { data, setSessionId, setVendorSlug, nextStep, prevStep, markCompleted, goToStep } = useOnboardingStore();
     const { currentTheme, isLoading: themeLoading } = useTheme();
+
+    // Fetch vendor data
+    const {
+        data: vendorData,
+        isLoading: isVendorLoading,
+        error: vendorError
+    } = useVendorBySlug(vendorSlug);
+    console.log(vendorData)
     const [sessionId, setSessionIdState] = useState<string>('');
     const [showInquiryConfirmation, setShowInquiryConfirmation] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
+    const [inquiryCreated, setInquiryCreated] = useState(false);
+    const [hasShownConfirmation, setHasShownConfirmation] = useState(false); // Add this state
     const cardRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
 
@@ -36,12 +49,14 @@ export function OnboardWizard({ vendorSlug }: OnboardWizardProps) {
         setSessionIdState(id);
         setSessionId(id);
         setVendorSlug(vendorSlug);
-    }, [vendorSlug]);
+    }, [vendorSlug, setSessionId, setVendorSlug]);
+
     const { isSaving, lastSavedAt, saveError } = useAutoSave({
         vendorSlug,
         sessionId,
         enabled: false,
     });
+
     useEffect(() => {
         if (cardRef.current && !showInquiryConfirmation) {
             cardRef.current.scrollIntoView({
@@ -50,7 +65,14 @@ export function OnboardWizard({ vendorSlug }: OnboardWizardProps) {
                 inline: 'nearest'
             });
         }
-    }, [data.currentStep]);
+    }, [data.currentStep, showInquiryConfirmation]);
+
+    // Check if inquiry already exists in store
+    useEffect(() => {
+        if (data.inquiryId) {
+            setInquiryCreated(true);
+        }
+    }, [data.inquiryId]);
 
     const progress = ((data.currentStep - 1) / (data.totalSteps - 1)) * 100;
 
@@ -60,13 +82,36 @@ export function OnboardWizard({ vendorSlug }: OnboardWizardProps) {
         'Review & Submit'
     ];
 
-    const handleNext = async () => {
-        // Show inquiry confirmation after completing personal details
-        if (data.currentStep === 1 && canProgressFromStep(1, data)) {
+    const handleInquiryCreated = (inquiryId: number) => {
+        setInquiryCreated(true);
+        console.log('Inquiry created with ID:', inquiryId);
+        // Show confirmation modal only once when inquiry is first created
+        if (!hasShownConfirmation) {
             setShowInquiryConfirmation(true);
-            return;
+            setHasShownConfirmation(true);
+        }
+    };
+
+    const handleNext = async () => {
+        // For step 1: Handle inquiry creation and confirmation
+        if (data.currentStep === 1) {
+            // If inquiry not created yet, don't allow progression
+            if (!inquiryCreated && !data.inquiryId) {
+                return;
+            }
+
+            // If inquiry exists but confirmation hasn't been shown, show it
+            if ((inquiryCreated || data.inquiryId) && !hasShownConfirmation) {
+                setShowInquiryConfirmation(true);
+                setHasShownConfirmation(true);
+                return;
+            }
+
+            // If we're here, inquiry exists and confirmation was handled
+            // Just proceed to next step
         }
 
+        // Normal step progression
         if (data.currentStep < data.totalSteps) {
             if (data.currentStep === 3) {
                 // Complete onboarding from preview
@@ -94,11 +139,8 @@ export function OnboardWizard({ vendorSlug }: OnboardWizardProps) {
 
     const handleContinueFromInquiry = () => {
         setShowInquiryConfirmation(false);
-        setIsTransitioning(true);
-        setTimeout(() => {
-            nextStep(); // Go to step 2
-            setIsTransitioning(false);
-        }, 150);
+        // Don't call nextStep here, let the user click "Next" button
+        // This prevents automatic jumping to step 3
     };
 
     const handleSkipToReview = () => {
@@ -111,20 +153,65 @@ export function OnboardWizard({ vendorSlug }: OnboardWizardProps) {
     };
 
     const renderCurrentStep = () => {
+        if (isVendorLoading) {
+            return <div>Loading vendor information...</div>;
+        }
+
+        if (vendorError || !vendorData?.vendor) {
+            return (
+                <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                        Unable to load vendor information. Please try refreshing the page.
+                    </AlertDescription>
+                </Alert>
+            );
+        }
+
         switch (data.currentStep) {
             case 1:
-                return <PersonalDetailsStep />;
+                return (
+                    <PersonalDetailsStep
+                        vendorSlug={vendorSlug}
+                        onInquiryCreated={handleInquiryCreated}
+                    />
+                );
             case 2:
-                return <DesignPreferencesStep />;
+                return <DesignPreferencesStep vendorId={vendorData.vendor.id} />;
             case 3:
                 return <PreviewSummary vendorSlug={vendorSlug} />;
             default:
-                return <PersonalDetailsStep />;
+                return (
+                    <PersonalDetailsStep
+                        vendorSlug={vendorSlug}
+                        onInquiryCreated={handleInquiryCreated}
+                    />
+                );
         }
     };
 
-    if (themeLoading) {
+    // Show loading state while theme or vendor data is loading
+    if (themeLoading || isVendorLoading) {
         return <OnboardingWizardSkeleton />;
+    }
+
+    // Show error state if vendor couldn't be loaded
+    if (vendorError) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <Card className="max-w-md w-full mx-4">
+                    <CardContent className="p-6">
+                        <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>
+                                Unable to find vendor information for "{vendorSlug}".
+                                Please check the URL and try again.
+                            </AlertDescription>
+                        </Alert>
+                    </CardContent>
+                </Card>
+            </div>
+        );
     }
 
     return (
@@ -145,7 +232,7 @@ export function OnboardWizard({ vendorSlug }: OnboardWizardProps) {
                                     className="text-2xl font-bold theme-heading"
                                     style={{ fontFamily: currentTheme.fonts.heading }}
                                 >
-                                    Wedding Planning
+                                    {vendorData?.vendor?.business_name || 'Wedding Planning'}
                                 </h1>
                                 <p className="text-sm text-muted-foreground transition-all duration-300">
                                     Tell us about your special day
@@ -223,12 +310,26 @@ export function OnboardWizard({ vendorSlug }: OnboardWizardProps) {
                                     totalSteps={data.totalSteps}
                                     onNext={handleNext}
                                     onPrev={handlePrev}
-                                    canProgress={canProgressFromStep(data.currentStep, data)}
+                                    canProgress={
+                                        canProgressFromStep(data.currentStep, data) &&
+                                        (data.currentStep !== 1 || inquiryCreated || !!data.inquiryId) &&
+                                        !showInquiryConfirmation // Disable next button when modal is shown
+                                    }
                                 />
                             </div>
                         )}
                     </CardContent>
                 </Card>
+                <ChatWidget
+                    vendorName={vendorData?.vendor?.business_name || "Wedding Support"}
+                    vendorAvatar={vendorData?.vendor?.avatar}
+                    isOnline={true}
+                    primaryColor={currentTheme.colors.primary}
+                    onSendMessage={(message) => {
+                        console.log('Message sent:', message);
+                        // Handle message sending logic here
+                    }}
+                />
             </div>
 
             {/* Inquiry Confirmation Modal */}
@@ -280,6 +381,7 @@ function OnboardingWizardSkeleton() {
                     </div>
                 </div>
             </div>
+
             <div className="max-w-4xl mx-auto px-4 py-8">
                 <div className="h-96 bg-muted animate-pulse rounded-lg" />
             </div>

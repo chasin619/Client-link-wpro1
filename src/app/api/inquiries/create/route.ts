@@ -144,22 +144,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Step 6: Create chat room
-    await prisma.chat.upsert({
-      where: {
-        vendorId_clientId: {
-          vendorId,
-          clientId: client.id,
-        },
-      },
-      update: {
-        isActive: true,
-        updatedAt: new Date(),
-        lastMessageAt: new Date(),
-      },
-      create: {
+    // Step 6: Create chat room associated with the event
+    await prisma.chat.create({
+      data: {
         vendorId,
         clientId: client.id,
+        eventId: event.id, // Associate chat with the specific event
         isActive: true,
         lastMessageAt: new Date(),
       },

@@ -102,23 +102,25 @@ model VendorClient {
   @@unique([vendorId, clientId])
 }
 
-// New Chat Models
+// Updated Chat Model - now associated with an event
 model Chat {
   id            Int       @id @default(autoincrement())
-  vendorId      Int
-  clientId      Int
+  vendorId      Int?
+  clientId      Int?
+  eventId       Int?      @unique // Added eventId with unique constraint
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   lastMessageAt DateTime?
   isActive      Boolean   @default(true)
 
-  vendor   VendorUser @relation("VendorChats", fields: [vendorId], references: [id], onDelete: Cascade)
-  client   ClientUser @relation("ClientChats", fields: [clientId], references: [id], onDelete: Cascade)
+  vendor   VendorUser? @relation("VendorChats", fields: [vendorId], references: [id], onDelete: Cascade)
+  client   ClientUser? @relation("ClientChats", fields: [clientId], references: [id], onDelete: Cascade)
+  event    Event?      @relation(fields: [eventId], references: [id], onDelete: Cascade) // Added event relation
   messages Message[]
 
-  @@unique([vendorId, clientId])
   @@index([vendorId])
   @@index([clientId])
+  @@index([eventId]) // Added index for eventId
   @@index([lastMessageAt])
 }
 
@@ -312,6 +314,7 @@ model Event {
   eventDetails     EventDetail[]
   inspirations     Inspiration[]
   Signature        Signature[]
+  chat             Chat? // Added one-to-one relation with Chat
 
   @@index([clientId])
   @@index([vendorId])

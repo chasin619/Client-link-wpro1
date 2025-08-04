@@ -17,7 +17,7 @@ import { PreviewSummary } from './steps/preview-summary';
 import { InquiryConfirmation } from './inquiry-confirmation';
 import { Flower2, Sparkles, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ChatWidget } from '../chat-widget/chat-widget';
+// import { ChatWidget } from '../chat-widget/chat-widget';
 
 interface OnboardWizardProps {
     vendorSlug: string;
@@ -320,16 +320,7 @@ export function OnboardWizard({ vendorSlug }: OnboardWizardProps) {
                         )}
                     </CardContent>
                 </Card>
-                <ChatWidget
-                    vendorName={vendorData?.vendor?.business_name || "Wedding Support"}
-                    vendorAvatar={vendorData?.vendor?.avatar}
-                    isOnline={true}
-                    primaryColor={currentTheme.colors.primary}
-                    onSendMessage={(message) => {
-                        console.log('Message sent:', message);
-                        // Handle message sending logic here
-                    }}
-                />
+
             </div>
 
             {/* Inquiry Confirmation Modal */}

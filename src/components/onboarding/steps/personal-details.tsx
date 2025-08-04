@@ -25,7 +25,10 @@ const personalDetailsSchema = z.object({
     eventType: z.string().min(1, 'Please select an event type'),
     eventDate: z.string().min(1, 'Please select an event date'),
     location: z.string().min(2, 'Please enter the event location'),
-    guestCount: z.string().min(1, 'Please select estimated guest count'),
+    guestCount: z.string().min(1, 'Please enter the number of guests').refine((val) => {
+        const num = parseInt(val);
+        return num > 0 && num <= 1000;
+    }, 'Guest count must be between 1 and 1000'),
     budgetRange: z.string().optional(),
 });
 
@@ -81,7 +84,7 @@ export function PersonalDetailsStep({
             updateData({
                 ...value,
                 venue: value.location,
-                guestCount: value.guestCount ? parseInt(value.guestCount.split('-')[0]) : undefined,
+                guestCount: value.guestCount ? parseInt(value.guestCount) : undefined,
             });
         });
         return () => subscription.unsubscribe();
@@ -367,25 +370,22 @@ export function PersonalDetailsStep({
                                     name="guestCount"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Guest Count *</FormLabel>
-                                            <Select
-                                                onValueChange={field.onChange}
-                                                defaultValue={field.value}
-                                                disabled={createInquiryMutation.isPending || inquiryCreated}
-                                            >
-                                                <FormControl>
-                                                    <SelectTrigger className="theme-input">
-                                                        <SelectValue placeholder="Select count" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    {guestCounts.map((count) => (
-                                                        <SelectItem key={count.value} value={count.value}>
-                                                            {count.label}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                            <FormLabel className="flex items-center gap-2">
+                                                <Users className="w-4 h-4" />
+                                                Guest Count *
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    placeholder="Enter number of guests"
+                                                    min="1"
+                                                    max="1000"
+                                                    className="theme-input"
+                                                    style={{ borderRadius: currentTheme.components.input.borderRadius }}
+                                                    disabled={createInquiryMutation.isPending || inquiryCreated}
+                                                    {...field}
+                                                />
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}

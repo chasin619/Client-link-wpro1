@@ -38,7 +38,8 @@ export async function POST(request: NextRequest) {
       referredBy,
     } = validatedData;
 
-    const guestCountNumber = parseInt(guestCount.split("-")[0]);
+    const guestCountNumber = parseInt(guestCount);
+    console.log(guestCountNumber);
 
     // Step 1: Check if vendor exists
     const vendor = await prisma.vendorUser.findUnique({
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
       client = await prisma.clientUser.create({
         data: {
           email,
-          name: `${brideName} & ${groomName}`,
+          name: `${brideName} `,
           phone,
           password: phone, // Using phone as password
         },
@@ -144,12 +145,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Step 6: Create chat room associated with the event
     await prisma.chat.create({
       data: {
         vendorId,
         clientId: client.id,
-        eventId: event.id, // Associate chat with the specific event
+        eventId: event.id,
         isActive: true,
         lastMessageAt: new Date(),
       },

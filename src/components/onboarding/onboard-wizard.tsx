@@ -267,7 +267,7 @@ export function OnboardWizard({ vendorSlug }: OnboardWizardProps) {
             </div>
 
             {/* Main Content */}
-            <div className="max-w-4xl mx-auto px-4 py-8">
+            <div className="max-w-4xl mx-auto  py-8">
                 <Card
                     ref={cardRef}
                     className="theme-card transition-all duration-300"

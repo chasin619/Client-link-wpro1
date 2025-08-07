@@ -130,6 +130,38 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    const defaultTemplate = await prisma.designTemplate.findFirst({
+      where: {
+        vendorId: vendorId,
+        isDefault: true,
+      },
+      include: {
+        slots: true,
+      },
+    });
+
+    if (defaultTemplate && defaultTemplate.slots.length > 0) {
+      await prisma.eventArrangement.createMany({
+        data: defaultTemplate.slots.map((slot) => ({
+          eventId: event.id,
+          section: slot.section,
+          slotNo: slot.slotNo,
+          slotName: slot.slotName,
+          arrangementId: slot.arrangementId,
+          defaultArrangementType: slot.defaultArrangementType,
+          quantity: 1,
+        })),
+      });
+
+      console.log(
+        `✅ Applied default template "${defaultTemplate.name}" with ${defaultTemplate.slots.length} slots to inquiry ${event.id}`
+      );
+    } else {
+      console.log(
+        `⚠️  No default design template found for vendor ${vendorId}`
+      );
+    }
+
     // Step 5: Create vendor-client relationship
     await prisma.vendorClient.upsert({
       where: {
@@ -237,7 +269,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Return success response with email status
     return NextResponse.json(
       {
         success: true,
@@ -260,6 +291,7 @@ export async function POST(request: NextRequest) {
           inquiryNumber: `INQ-${event.id.toString().padStart(6, "0")}`,
           isNewClient,
           emailStatus: emailsSent,
+          designSlotsCreated: defaultTemplate?.slots.length || 0, // Added this to show how many slots were copied
         },
       },
       { status: 201 }

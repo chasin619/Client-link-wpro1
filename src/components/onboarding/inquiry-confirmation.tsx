@@ -87,18 +87,9 @@ export function InquiryConfirmation({
                             onClick={onContinue}
                         >
                             <ArrowRight className="h-4 w-4" />
-                            Continue Planning
+                            visit client portal
                         </Button>
 
-                        {/* Skip Option */}
-                        <div className="text-center">
-                            <button
-                                onClick={onSkipToReview}
-                                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                            >
-                                Skip to review instead
-                            </button>
-                        </div>
                     </CardContent>
                 </Card>
             </div>

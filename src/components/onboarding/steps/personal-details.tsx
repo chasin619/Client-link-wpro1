@@ -418,37 +418,7 @@ export function PersonalDetailsStep({
                                     )}
                                 />
 
-                                <FormField
-                                    control={form.control}
-                                    name="budgetRange"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="flex items-center gap-2">
-                                                <DollarSign className="w-4 h-4" />
-                                                Floral Budget (Optional)
-                                            </FormLabel>
-                                            <Select
-                                                onValueChange={field.onChange}
-                                                defaultValue={field.value}
-                                                disabled={createInquiryMutation.isPending || inquiryCreated}
-                                            >
-                                                <FormControl>
-                                                    <SelectTrigger className="theme-input">
-                                                        <SelectValue placeholder="Select budget range" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    {budgetRanges.map((budget) => (
-                                                        <SelectItem key={budget.value} value={budget.value}>
-                                                            {budget.label}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+
                             </div>
                         </CardContent>
                     </Card>

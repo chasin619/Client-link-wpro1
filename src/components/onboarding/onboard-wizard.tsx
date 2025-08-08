@@ -189,23 +189,7 @@ export function OnboardWizard({ vendorSlug }: OnboardWizardProps) {
             {/* Main Content */}
             <div className="max-w-4xl mx-auto p-4">
                 <Card className="theme-card">
-                    <CardHeader className="text-center border-b py-3">
-                        <div className="flex items-center justify-center gap-2">
-                            <formInfo.icon
-                                className="h-4 w-4"
-                                style={{ color: currentTheme.colors.accent }}
-                            />
-                            <Badge
-                                variant="secondary"
-                                style={{
-                                    backgroundColor: `${currentTheme.colors.primary}10`,
-                                    color: currentTheme.colors.primary
-                                }}
-                            >
-                                {formInfo.title}
-                            </Badge>
-                        </div>
-                    </CardHeader>
+
 
                     <CardContent className="p-4">
                         {renderCurrentStep()}

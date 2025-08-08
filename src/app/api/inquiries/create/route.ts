@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     } = validatedData;
 
     // Handle optional guestCount with default value
-    const guestCountNumber = guestCount ? parseInt(guestCount) : 50;
+    const guestCountNumber = guestCount ? parseInt(guestCount) : 0;
     console.log(guestCountNumber);
 
     // Step 1: Check if vendor exists

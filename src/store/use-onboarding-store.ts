@@ -68,6 +68,7 @@ interface OnboardingStore {
   goToPreview: () => void;
   goBackFromPreview: () => void;
   resetData: () => void;
+  clearData: () => void; // Add this line
   setSessionId: (sessionId: string) => void;
   setVendorSlug: (vendorSlug: string) => void;
   markCompleted: () => void;
@@ -77,7 +78,6 @@ interface OnboardingStore {
   location?: string;
   budgetRange?: string;
 }
-
 const initialData: OnboardingData = {
   currentStep: 1,
   totalSteps: 3,
@@ -155,7 +155,10 @@ export const useOnboardingStore = create<OnboardingStore>()(
         set((state) => ({
           data: { ...state.data, isCompleted: true },
         })),
-
+      clearData: () => {
+        localStorage.removeItem("onboarding-storage");
+        set({ data: initialData });
+      },
       resetData: () => set({ data: initialData }),
     }),
     {

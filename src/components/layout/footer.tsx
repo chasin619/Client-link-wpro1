@@ -49,257 +49,224 @@ export function Footer({ vendor }: FooterProps) {
                 </svg>
             </div>
 
-            <div className="relative pt-16 pb-8">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="relative pt-20 pb-12">
+                <div className="max-w-7xl mx-auto px-6 lg:px-8">
                     {/* Main Footer Content */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-16">
 
-                        {/* Business Info Column */}
-                        <div className="lg:col-span-2">
-                            <div className="flex items-center gap-3 mb-6">
+                        {/* Business Info Column - Takes 5 columns */}
+                        <div className="lg:col-span-5 space-y-6">
+                            {/* Logo and Name */}
+                            <div className="flex items-center gap-4">
                                 <div
-                                    className="w-10 h-10 rounded-full flex items-center justify-center"
+                                    className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg"
                                     style={{ backgroundColor: currentTheme.colors.primary }}
                                 >
-                                    <Flower2 className="h-5 w-5 text-white" />
+                                    <Flower2 className="h-6 w-6 text-white" />
                                 </div>
                                 <h3
-                                    className="text-2xl font-bold theme-heading"
+                                    className="text-3xl font-bold theme-heading text-foreground"
                                     style={{ fontFamily: currentTheme.fonts.heading }}
                                 >
                                     {vendor.business_name}
                                 </h3>
                             </div>
 
+                            {/* Description */}
                             <p
-                                className="text-muted-foreground mb-6 max-w-md leading-relaxed"
+                                className="text-muted-foreground leading-relaxed text-base max-w-md"
                                 style={{ fontFamily: currentTheme.fonts.body }}
                             >
-                                {` Creating beautiful, memorable floral arrangements for life's most precious moments.
-                                Let us help you tell your love story through the timeless language of flowers.`}
+                                Creating beautiful, memorable floral arrangements for life's most precious moments.
+                                Let us help you tell your love story through the timeless language of flowers.
                             </p>
 
-                            {/* Newsletter Signup */}
-                            <div className="space-y-3">
-                                <h4 className="font-semibold text-foreground">Stay Inspired</h4>
-                                <div className="flex gap-2 max-w-sm">
-                                    <Input
-                                        placeholder="Enter your email"
-                                        className="theme-input"
-                                        style={{ borderRadius: currentTheme.components.input.borderRadius }}
-                                    />
-                                    <Button
-                                        size="icon"
-                                        className="theme-button shrink-0"
-                                        style={{
-                                            borderRadius: currentTheme.components.button.borderRadius,
-                                            backgroundColor: currentTheme.colors.primary
-                                        }}
-                                    >
-                                        <ArrowRight className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                    Get wedding inspiration and seasonal flower tips
-                                </p>
-                            </div>
+
                         </div>
 
-                        {/* Contact Info Column */}
-                        <div>
+                        {/* Contact Info Column - Takes 4 columns */}
+                        <div className="lg:col-span-4 space-y-6">
                             <h4
-                                className="font-semibold text-foreground mb-6 theme-heading"
+                                className="font-bold text-foreground text-xl theme-heading mb-8"
                                 style={{ fontFamily: currentTheme.fonts.heading }}
                             >
-                                Contact Info
+                                Get in Touch
                             </h4>
 
-                            <div className="space-y-4">
-                                <div className="flex items-start gap-3">
-                                    <MapPin
-                                        className="h-5 w-5 mt-0.5 shrink-0"
-                                        style={{ color: currentTheme.colors.primary }}
-                                    />
-                                    <div>
-                                        <p className="text-sm font-medium text-foreground">Address</p>
-                                        <p className="text-sm text-muted-foreground">{vendor.business_address}</p>
+                            <div className="space-y-6">
+                                {/* Address */}
+                                <div className="flex items-start gap-4">
+                                    <div
+                                        className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 mt-1"
+                                        style={{ backgroundColor: `${currentTheme.colors.primary}20` }}
+                                    >
+                                        <MapPin
+                                            className="h-5 w-5"
+                                            style={{ color: currentTheme.colors.primary }}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="font-semibold text-foreground">Visit Us</p>
+                                        <p className="text-muted-foreground leading-relaxed">
+                                            {vendor.business_address}
+                                        </p>
                                     </div>
                                 </div>
 
-                                <div className="flex items-start gap-3">
-                                    <Phone
-                                        className="h-5 w-5 mt-0.5 shrink-0"
-                                        style={{ color: currentTheme.colors.primary }}
-                                    />
-                                    <div>
-                                        <p className="text-sm font-medium text-foreground">Phone</p>
+                                {/* Phone */}
+                                <div className="flex items-start gap-4">
+                                    <div
+                                        className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 mt-1"
+                                        style={{ backgroundColor: `${currentTheme.colors.primary}20` }}
+                                    >
+                                        <Phone
+                                            className="h-5 w-5"
+                                            style={{ color: currentTheme.colors.primary }}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="font-semibold text-foreground">Call Us</p>
                                         <a
                                             href={`tel:${vendor.phone}`}
-                                            className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                                            className="text-muted-foreground hover:text-primary transition-colors font-medium"
                                         >
                                             {vendor.phone}
                                         </a>
                                     </div>
                                 </div>
 
-                                <div className="flex items-start gap-3">
-                                    <Mail
-                                        className="h-5 w-5 mt-0.5 shrink-0"
-                                        style={{ color: currentTheme.colors.primary }}
-                                    />
-                                    <div>
-                                        <p className="text-sm font-medium text-foreground">Email</p>
+                                {/* Email */}
+                                <div className="flex items-start gap-4">
+                                    <div
+                                        className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 mt-1"
+                                        style={{ backgroundColor: `${currentTheme.colors.primary}20` }}
+                                    >
+                                        <Mail
+                                            className="h-5 w-5"
+                                            style={{ color: currentTheme.colors.primary }}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="font-semibold text-foreground">Email Us</p>
                                         <a
                                             href={`mailto:${vendor.business_email}`}
-                                            className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                                            className="text-muted-foreground hover:text-primary transition-colors font-medium break-all"
                                         >
                                             {vendor.business_email}
                                         </a>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
 
-                                <div className="flex items-start gap-3">
-                                    <Clock
-                                        className="h-5 w-5 mt-0.5 shrink-0"
-                                        style={{ color: currentTheme.colors.primary }}
-                                    />
-                                    <div>
-                                        <p className="text-sm font-medium text-foreground">Business Hours</p>
-                                        <div className="text-sm text-muted-foreground space-y-1">
-                                            <p>Mon - Fri: 9:00 AM - 6:00 PM</p>
-                                            <p>Sat: 10:00 AM - 4:00 PM</p>
-                                            <p>Sun: By Appointment</p>
+                        {/* Business Hours Column - Takes 3 columns */}
+                        <div className="lg:col-span-3 space-y-6">
+                            <h4
+                                className="font-bold text-foreground text-xl theme-heading mb-8"
+                                style={{ fontFamily: currentTheme.fonts.heading }}
+                            >
+                                Business Hours
+                            </h4>
+
+                            <div className="space-y-4">
+                                <div className="flex items-start gap-4">
+                                    <div
+                                        className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                                        style={{ backgroundColor: `${currentTheme.colors.primary}20` }}
+                                    >
+                                        <Clock
+                                            className="h-5 w-5"
+                                            style={{ color: currentTheme.colors.primary }}
+                                        />
+                                    </div>
+                                    <div className="space-y-3 text-sm">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-muted-foreground">Monday - Friday</span>
+                                            <span className="font-semibold text-foreground">9AM - 6PM</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-muted-foreground">Saturday</span>
+                                            <span className="font-semibold text-foreground">10AM - 4PM</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-muted-foreground">Sunday</span>
+                                            <span className="font-semibold text-foreground">By Appointment</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+
+
                         </div>
+                    </div>
 
-                        {/* Quick Links Column */}
-                        <div>
-                            <h4
-                                className="font-semibold text-foreground mb-6 theme-heading"
-                                style={{ fontFamily: currentTheme.fonts.heading }}
-                            >
-                                Quick Links
-                            </h4>
+                    {/* Divider */}
+                    <Separator className="mb-12" />
 
-                            <div className="space-y-3">
-                                {[
-                                    { label: 'Wedding Packages', href: '/packages' },
-                                    { label: 'Portfolio Gallery', href: '/portfolio' },
-                                    { label: 'About Us', href: '/about' },
-                                    { label: 'Reviews', href: '/reviews' },
-                                    { label: 'Contact', href: '/contact' },
-                                    { label: 'Wedding Planning Guide', href: '/guide' },
-                                ].map((link) => (
-                                    <a
-                                        key={link.label}
-                                        href={link.href}
-                                        className="block text-sm text-muted-foreground hover:text-primary transition-colors"
-                                    >
-                                        {link.label}
-                                    </a>
-                                ))}
+                    {/* Bottom Footer */}
+                    <div className="space-y-8">
+                        {/* Social Links and Trust Badges */}
+                        <div className="flex flex-col lg:flex-row justify-between items-center gap-8">
+                            {/* Social Links */}
+                            <div className="flex items-center gap-6">
+                                <span className="text-muted-foreground font-medium">Follow Us</span>
+                                <div className="flex gap-4">
+                                    {[
+                                        { icon: Instagram, href: '#', label: 'Instagram' },
+                                        { icon: Facebook, href: '#', label: 'Facebook' },
+                                        { icon: Twitter, href: '#', label: 'Twitter' },
+                                    ].map((social) => (
+                                        <a
+                                            key={social.label}
+                                            href={social.href}
+                                            className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 hover:shadow-lg"
+                                            style={{
+                                                backgroundColor: `${currentTheme.colors.primary}15`,
+                                                color: currentTheme.colors.primary
+                                            }}
+                                            aria-label={social.label}
+                                        >
+                                            <social.icon className="h-5 w-5" />
+                                        </a>
+                                    ))}
+                                </div>
                             </div>
 
-                            {/* Services Badge */}
-                            <div className="mt-6">
-                                <Badge
-                                    variant="outline"
-                                    className="mb-3"
-                                    style={{ borderColor: currentTheme.colors.primary }}
-                                >
-                                    Featured Services
-                                </Badge>
-                                <div className="space-y-2">
-                                    {[
-                                        'Bridal Bouquets',
-                                        'Ceremony Arrangements',
-                                        'Reception Centerpieces'
-                                    ].map((service) => (
-                                        <div key={service} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                            <div
-                                                className="w-1.5 h-1.5 rounded-full"
-                                                style={{ backgroundColor: currentTheme.colors.accent }}
-                                            />
-                                            {service}
-                                        </div>
-                                    ))}
+                            {/* Trust Badges */}
+                            <div className="flex flex-wrap justify-center lg:justify-end items-center gap-6 text-sm text-muted-foreground">
+                                {[
+                                    'Professional Florist Association Member',
+                                    'Licensed & Insured',
+                                    'Satisfaction Guaranteed'
+                                ].map((badge) => (
+                                    <div key={badge} className="flex items-center gap-2">
+                                        <div
+                                            className="w-2 h-2 rounded-full"
+                                            style={{ backgroundColor: currentTheme.colors.accent }}
+                                        />
+                                        <span className="whitespace-nowrap">{badge}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Copyright */}
+                        <div className="text-center py-6 border-t border-muted-foreground/10">
+                            <div className="flex flex-col sm:flex-row justify-center items-center gap-2 text-muted-foreground">
+                                <span>© {currentYear} {vendor.business_name}. All rights reserved.</span>
+                                <div className="flex items-center gap-2">
+                                    <span>Made with</span>
+                                    <Heart
+                                        className="h-4 w-4"
+                                        style={{ color: currentTheme.colors.primary }}
+                                        fill="currentColor"
+                                    />
+                                    <span>for beautiful weddings.</span>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <Separator className="mb-8" />
-
-                    {/* Bottom Footer */}
-                    <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
-                        {/* Copyright */}
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>© {currentYear} {vendor.business_name}.</span>
-                            <span>Made with</span>
-                            <Heart
-                                className="h-4 w-4"
-                                style={{ color: currentTheme.colors.primary }}
-                                fill="currentColor"
-                            />
-                            <span>for beautiful weddings.</span>
-                        </div>
-
-                        {/* Social Links */}
-                        <div className="flex items-center gap-4">
-                            <span className="text-sm text-muted-foreground">Follow us:</span>
-                            <div className="flex gap-3">
-                                {[
-                                    { icon: Instagram, href: '#', label: 'Instagram' },
-                                    { icon: Facebook, href: '#', label: 'Facebook' },
-                                    { icon: Twitter, href: '#', label: 'Twitter' },
-                                ].map((social) => (
-                                    <a
-                                        key={social.label}
-                                        href={social.href}
-                                        className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110"
-                                        style={{
-                                            backgroundColor: `${currentTheme.colors.primary}20`,
-                                            color: currentTheme.colors.primary
-                                        }}
-                                        aria-label={social.label}
-                                    >
-                                        <social.icon className="h-4 w-4" />
-                                    </a>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Trust Badges */}
-                    <div className="mt-8 pt-6 border-t border-muted-foreground/20">
-                        <div className="flex flex-wrap justify-center items-center gap-6 text-xs text-muted-foreground">
-                            <div className="flex items-center gap-2">
-                                <div
-                                    className="w-3 h-3 rounded-full"
-                                    style={{ backgroundColor: currentTheme.colors.accent }}
-                                />
-                                Professional Florist Association Member
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div
-                                    className="w-3 h-3 rounded-full"
-                                    style={{ backgroundColor: currentTheme.colors.accent }}
-                                />
-                                Licensed & Insured
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div
-                                    className="w-3 h-3 rounded-full"
-                                    style={{ backgroundColor: currentTheme.colors.accent }}
-                                />
-                                Satisfaction Guaranteed
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                </div >
             </div >
 
             {/* Background Pattern */}
@@ -314,35 +281,35 @@ export function Footer({ vendor }: FooterProps) {
 
 function FooterSkeleton() {
     return (
-        <footer className="bg-muted/30 border-t pt-16 pb-8">
-            <div className="max-w-7xl mx-auto px-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-                    {/* Business Info Skeleton */}
-                    <div className="lg:col-span-2 space-y-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-muted animate-pulse rounded-full" />
+        <footer className="bg-muted/30 border-t pt-20 pb-12">
+            <div className="max-w-7xl mx-auto px-6 lg:px-8">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-16">
+                    {/* Business Info Skeleton - 5 columns */}
+                    <div className="lg:col-span-5 space-y-6">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-muted animate-pulse rounded-full" />
                             <div className="h-8 w-48 bg-muted animate-pulse rounded" />
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                             <div className="h-4 w-full bg-muted animate-pulse rounded" />
                             <div className="h-4 w-3/4 bg-muted animate-pulse rounded" />
                             <div className="h-4 w-1/2 bg-muted animate-pulse rounded" />
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                             <div className="h-6 w-32 bg-muted animate-pulse rounded" />
-                            <div className="flex gap-2">
+                            <div className="flex gap-3 max-w-sm">
                                 <div className="h-10 flex-1 bg-muted animate-pulse rounded" />
                                 <div className="h-10 w-10 bg-muted animate-pulse rounded" />
                             </div>
                         </div>
                     </div>
 
-                    {/* Contact Info Skeleton */}
-                    <div className="space-y-4">
+                    {/* Contact Info Skeleton - 4 columns */}
+                    <div className="lg:col-span-4 space-y-6">
                         <div className="h-6 w-32 bg-muted animate-pulse rounded" />
-                        {Array.from({ length: 4 }).map((_, i) => (
-                            <div key={i} className="flex gap-3">
-                                <div className="w-5 h-5 bg-muted animate-pulse rounded" />
+                        {Array.from({ length: 3 }).map((_, i) => (
+                            <div key={i} className="flex gap-4">
+                                <div className="w-10 h-10 bg-muted animate-pulse rounded-lg" />
                                 <div className="space-y-2 flex-1">
                                     <div className="h-4 w-20 bg-muted animate-pulse rounded" />
                                     <div className="h-4 w-full bg-muted animate-pulse rounded" />
@@ -351,23 +318,32 @@ function FooterSkeleton() {
                         ))}
                     </div>
 
-                    {/* Quick Links Skeleton */}
-                    <div className="space-y-4">
-                        <div className="h-6 w-28 bg-muted animate-pulse rounded" />
-                        {Array.from({ length: 6 }).map((_, i) => (
-                            <div key={i} className="h-4 w-full bg-muted animate-pulse rounded" />
-                        ))}
+                    {/* Business Hours Skeleton - 3 columns */}
+                    <div className="lg:col-span-3 space-y-6">
+                        <div className="h-6 w-32 bg-muted animate-pulse rounded" />
+                        <div className="flex gap-4">
+                            <div className="w-10 h-10 bg-muted animate-pulse rounded-lg" />
+                            <div className="space-y-3 flex-1">
+                                {Array.from({ length: 3 }).map((_, i) => (
+                                    <div key={i} className="h-4 w-full bg-muted animate-pulse rounded" />
+                                ))}
+                            </div>
+                        </div>
+                        <div className="h-10 w-full bg-muted animate-pulse rounded" />
                     </div>
                 </div>
 
-                <div className="border-t pt-8">
+                <div className="border-t pt-12 space-y-8">
                     <div className="flex justify-between items-center">
                         <div className="h-4 w-48 bg-muted animate-pulse rounded" />
                         <div className="flex gap-3">
                             {Array.from({ length: 3 }).map((_, i) => (
-                                <div key={i} className="w-8 h-8 bg-muted animate-pulse rounded-full" />
+                                <div key={i} className="w-10 h-10 bg-muted animate-pulse rounded-full" />
                             ))}
                         </div>
+                    </div>
+                    <div className="text-center py-6 border-t">
+                        <div className="h-4 w-64 bg-muted animate-pulse rounded mx-auto" />
                     </div>
                 </div>
             </div>

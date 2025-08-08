@@ -156,7 +156,6 @@ export function ExpressContactStep({
     return (
         <div className="min-h-[500px] flex items-center justify-center p-4">
             <div className="w-full max-w-md">
-
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                         {inquiryCreated && (
@@ -189,7 +188,7 @@ export function ExpressContactStep({
                                         <FormControl>
                                             <Input
                                                 placeholder="Enter your full name"
-                                                className="h-10 focus:ring-2 focus:ring-primary/20 transition-all"
+                                                className="h-11 focus:ring-2 focus:ring-primary/20 transition-all"
                                                 autoComplete="name"
                                                 disabled={createInquiryMutation.isPending || inquiryCreated}
                                                 {...field}
@@ -200,57 +199,55 @@ export function ExpressContactStep({
                                 )}
                             />
 
-                            <div className="grid grid-cols-2 gap-3">
-                                <FormField
-                                    control={form.control}
-                                    name="email"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-sm font-medium flex items-center gap-1">
-                                                <Mail className="w-3 h-3" />
-                                                Email
-                                                <span className="text-red-500">*</span>
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    type="email"
-                                                    placeholder="your@email.com"
-                                                    className="h-10 focus:ring-2 focus:ring-primary/20 transition-all"
-                                                    autoComplete="email"
-                                                    disabled={createInquiryMutation.isPending || inquiryCreated}
-                                                    {...field}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                            <FormField
+                                control={form.control}
+                                name="email"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-sm font-medium flex items-center gap-1">
+                                            <Mail className="w-3 h-3" />
+                                            Email
+                                            <span className="text-red-500">*</span>
+                                        </FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="email"
+                                                placeholder="your@email.com"
+                                                className="h-11 focus:ring-2 focus:ring-primary/20 transition-all"
+                                                autoComplete="email"
+                                                disabled={createInquiryMutation.isPending || inquiryCreated}
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
 
-                                <FormField
-                                    control={form.control}
-                                    name="phone"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-sm font-medium flex items-center gap-1">
-                                                <Phone className="w-3 h-3" />
-                                                Phone
-                                                <span className="text-red-500">*</span>
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    type="tel"
-                                                    placeholder="(555) 123-4567"
-                                                    className="h-10 focus:ring-2 focus:ring-primary/20 transition-all"
-                                                    autoComplete="tel"
-                                                    disabled={createInquiryMutation.isPending || inquiryCreated}
-                                                    {...field}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
+                            <FormField
+                                control={form.control}
+                                name="phone"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-sm font-medium flex items-center gap-1">
+                                            <Phone className="w-3 h-3" />
+                                            Phone
+                                            <span className="text-red-500">*</span>
+                                        </FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="tel"
+                                                placeholder="(555) 123-4567"
+                                                className="h-11 focus:ring-2 focus:ring-primary/20 transition-all"
+                                                autoComplete="tel"
+                                                disabled={createInquiryMutation.isPending || inquiryCreated}
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
 
                             <FormField
                                 control={form.control}
@@ -265,7 +262,7 @@ export function ExpressContactStep({
                                         <FormControl>
                                             <Input
                                                 type="date"
-                                                className="h-10 focus:ring-2 focus:ring-primary/20 transition-all"
+                                                className="h-11 focus:ring-2 focus:ring-primary/20 transition-all"
                                                 disabled={createInquiryMutation.isPending || inquiryCreated}
                                                 {...field}
                                             />
@@ -288,7 +285,7 @@ export function ExpressContactStep({
                                         <FormControl>
                                             <Textarea
                                                 placeholder="Tell us about your special day..."
-                                                className="min-h-[70px] resize-none focus:ring-2 focus:ring-primary/20 transition-all"
+                                                className="min-h-[80px] resize-none focus:ring-2 focus:ring-primary/20 transition-all"
                                                 disabled={createInquiryMutation.isPending || inquiryCreated}
                                                 {...field}
                                             />
@@ -303,7 +300,7 @@ export function ExpressContactStep({
                             <Button
                                 type="submit"
                                 disabled={createInquiryMutation.isPending || !form.formState.isValid}
-                                className="w-full h-11 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                                className="w-full h-12 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
                                 style={{
                                     backgroundColor: currentTheme.colors.primary,
                                     color: 'white'

@@ -77,7 +77,7 @@ export function OnboardWizard({ vendorSlug }: OnboardWizardProps) {
         }
 
         markCompleted();
-
+        clearData();
         router.push(`https://client.wpro.ai?email=${data.email}&password=${data.phone}`);
     };
 
@@ -88,6 +88,7 @@ export function OnboardWizard({ vendorSlug }: OnboardWizardProps) {
         const email = data.email;
         const phone = data.phone;
 
+        clearData();
         router.push(`https://client.wpro.ai?email=${email}&password=${phone}`);
     };
 

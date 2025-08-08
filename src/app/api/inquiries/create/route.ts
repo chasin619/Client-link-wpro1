@@ -9,15 +9,16 @@ import {
 
 const inquirySchema = z.object({
   brideName: z.string().min(2, "Bride name must be at least 2 characters"),
-  groomName: z.string().min(2, "Partner name must be at least 2 characters"),
+  groomName: z.string().optional(), // Made optional
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().min(10, "Please enter a valid phone number"),
-  eventType: z.string().min(1, "Please select an event type"),
+  eventType: z.string().optional(), // Made optional
   eventDate: z.string().min(1, "Please select an event date"),
-  location: z.string().min(2, "Please enter the event location"),
-  guestCount: z.string().min(1, "Please select estimated guest count"),
+  location: z.string().optional(), // Made optional
+  guestCount: z.string().optional(), // Made optional
   vendorId: z.number().int().positive("Vendor ID is required"),
   referredBy: z.string().optional(),
+  message: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -36,9 +37,11 @@ export async function POST(request: NextRequest) {
       guestCount,
       vendorId,
       referredBy,
+      message,
     } = validatedData;
 
-    const guestCountNumber = parseInt(guestCount);
+    // Handle optional guestCount with default value
+    const guestCountNumber = guestCount ? parseInt(guestCount) : 50;
     console.log(guestCountNumber);
 
     // Step 1: Check if vendor exists
@@ -73,17 +76,20 @@ export async function POST(request: NextRequest) {
       client = await prisma.clientUser.create({
         data: {
           email,
-          name: `${brideName} `,
+          name: brideName, // Using brideName as default name
           phone,
           password: phone, // Using phone as password
         },
       });
     }
 
-    // Step 3: Find or create event type
-    let eventTypeRecord = await prisma.eventType.findFirst({
+    // Step 3: Handle optional eventType - find or create
+    let eventTypeRecord;
+    const eventTypeName = eventType || "General Inquiry"; // Default event type
+
+    eventTypeRecord = await prisma.eventType.findFirst({
       where: {
-        name: eventType,
+        name: eventTypeName,
         vendorId: vendorId,
       },
     });
@@ -91,14 +97,14 @@ export async function POST(request: NextRequest) {
     if (!eventTypeRecord) {
       eventTypeRecord = await prisma.eventType.create({
         data: {
-          name: eventType,
+          name: eventTypeName,
           vendorId: vendorId,
           isShared: false,
         },
       });
     }
 
-    // Step 4: Create event/inquiry
+    // Step 4: Create event/inquiry with optional fields handled
     const event = await prisma.event.create({
       data: {
         clientId: client.id,
@@ -106,8 +112,8 @@ export async function POST(request: NextRequest) {
         eventTypeId: eventTypeRecord.id,
         weddingDate: new Date(eventDate),
         brideName,
-        groomName,
-        location,
+        groomName: groomName || "", // Default to empty string if not provided
+        location: location || "TBD", // Default location
         NumberOfGuests: guestCountNumber,
         referredBy: referredBy || null,
         status: "Inquiry",
@@ -130,6 +136,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Step 5: Apply default template if available
     const defaultTemplate = await prisma.designTemplate.findFirst({
       where: {
         vendorId: vendorId,
@@ -162,7 +169,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Step 5: Create vendor-client relationship
+    // Step 6: Create vendor-client relationship
     await prisma.vendorClient.upsert({
       where: {
         vendorId_clientId: {
@@ -177,6 +184,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Step 7: Create chat
     await prisma.chat.create({
       data: {
         vendorId,
@@ -187,7 +195,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Step 7: Send beautiful emails using your nodemailer function
+    // Step 8: Send beautiful emails using your nodemailer function
     const eventDateFormatted = new Date(eventDate).toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
@@ -204,17 +212,17 @@ export async function POST(request: NextRequest) {
     if (vendor.business_email) {
       try {
         const clientEmailContent = generateClientWelcomeEmail({
-          clientName: client.name || `${brideName} & ${groomName}`,
+          clientName: client.name || brideName,
           vendorName: vendor.business_name,
           email: client.email,
           password: phone,
           eventDate: eventDateFormatted,
-          eventType,
-          location,
+          eventType: eventTypeName,
+          location: location || "TBD",
           guestCount: guestCountNumber,
           inquiryId: event.id,
           brideName,
-          groomName,
+          groomName: groomName || "",
         });
 
         await sendEmailEvent(
@@ -235,23 +243,26 @@ export async function POST(request: NextRequest) {
       try {
         const vendorEmailContent = generateVendorNotificationEmail({
           vendorName: vendor.business_name,
-          clientName: client.name || `${brideName} & ${groomName}`,
+          clientName: client.name || brideName,
           clientEmail: client.email,
           clientPhone: phone,
           eventDate: eventDateFormatted,
-          eventType,
-          location,
-          guestCount: guestCountNumber,
+          eventType: eventTypeName,
+          location: location || "",
+          guestCount: guestCountNumber || 0,
           inquiryId: event.id,
           brideName,
-          groomName,
+          groomName: groomName || "",
+          message: message,
         });
 
         await sendEmailEvent(
           vendor.business_email,
           `🎉 New Wedding Inquiry #${event.id
             .toString()
-            .padStart(6, "0")} - ${brideName} & ${groomName}`,
+            .padStart(6, "0")} - ${brideName}${
+            groomName ? ` & ${groomName}` : ""
+          }`,
           vendorEmailContent,
           `wpro.ai Notifications <noreply@wpro.ai>`
         );
@@ -291,7 +302,7 @@ export async function POST(request: NextRequest) {
           inquiryNumber: `INQ-${event.id.toString().padStart(6, "0")}`,
           isNewClient,
           emailStatus: emailsSent,
-          designSlotsCreated: defaultTemplate?.slots.length || 0, // Added this to show how many slots were copied
+          designSlotsCreated: defaultTemplate?.slots.length || 0,
         },
       },
       { status: 201 }

@@ -136,8 +136,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Step 5: Apply default template if available
-    const defaultTemplate = await prisma.designTemplate.findFirst({
+    let defaultTemplate = await prisma.designTemplate.findFirst({
       where: {
         vendorId: vendorId,
         isDefault: true,
@@ -146,6 +145,18 @@ export async function POST(request: NextRequest) {
         slots: true,
       },
     });
+
+    if (!defaultTemplate) {
+      defaultTemplate = await prisma.designTemplate.findFirst({
+        where: {
+          isShared: true,
+          isDefault: true,
+        },
+        include: {
+          slots: true,
+        },
+      });
+    }
 
     if (defaultTemplate && defaultTemplate.slots.length > 0) {
       await prisma.eventArrangement.createMany({

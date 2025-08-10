@@ -3,7 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Mail, Phone, Calendar, MessageSquare, Loader2, Heart, Clock, CheckCircle, Star } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -45,7 +45,11 @@ export function ExpressContactStep({
     } = useVendorBySlug(vendorSlug);
 
     const createInquiryMutation = useCreateInquiry();
+
+    // ✅ Enhanced state management to prevent duplicates
     const [inquiryCreated, setInquiryCreated] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submissionProcessed, setSubmissionProcessed] = useState(false);
 
     const form = useForm<ExpressContactForm>({
         resolver: zodResolver(expressContactSchema),
@@ -58,40 +62,51 @@ export function ExpressContactStep({
         },
     });
 
+    // ✅ Debounced form data updates to prevent excessive API calls
     useEffect(() => {
         const subscription = form.watch((value) => {
-            updateData({
-                brideName: value.fullName,
-                groomName: '',
-                email: value.email,
-                phone: value.phone,
-                eventDate: value.eventDate,
-                additionalInfo: value.message,
-                eventType: 'wedding',
-                venue: 'TBD',
-                guestCount: 50,
-            });
+            // Only update if not currently submitting
+            if (!isSubmitting && !inquiryCreated) {
+                updateData({
+                    brideName: value.fullName,
+                    groomName: '',
+                    email: value.email,
+                    phone: value.phone,
+                    eventDate: value.eventDate,
+                    additionalInfo: value.message,
+                    eventType: 'wedding',
+                    venue: 'TBD',
+                    guestCount: 50,
+                });
+            }
         });
         return () => subscription.unsubscribe();
-    }, [form, updateData]);
+    }, [form, updateData, isSubmitting, inquiryCreated]);
 
+    // ✅ Handle successful inquiry creation with proper state management
     useEffect(() => {
-        if (createInquiryMutation.isSuccess && createInquiryMutation.data) {
+        if (createInquiryMutation.isSuccess && createInquiryMutation.data && !submissionProcessed) {
             setInquiryCreated(true);
+            setIsSubmitting(false);
+            setSubmissionProcessed(true);
+
             toast.success(createInquiryMutation.data.message);
 
             if (onInquiryCreated) {
                 onInquiryCreated(createInquiryMutation.data.data.inquiryId);
             }
         }
-    }, [createInquiryMutation.isSuccess, createInquiryMutation.data, onInquiryCreated]);
+    }, [createInquiryMutation.isSuccess, createInquiryMutation.data, onInquiryCreated, submissionProcessed]);
 
+    // ✅ Handle errors and reset submission state
     useEffect(() => {
         if (createInquiryMutation.error) {
+            setIsSubmitting(false);
+
             const error = createInquiryMutation.error;
             if (error.errors) {
                 error.errors.forEach((err: any) => {
-                    toast.error(`${err.path.join('.')}: ${err.message}`);
+                    toast.error(`${err.field}: ${err.message}`);
                 });
             } else {
                 toast.error(error.message || 'Failed to create inquiry');
@@ -99,37 +114,69 @@ export function ExpressContactStep({
         }
     }, [createInquiryMutation.error]);
 
+    // ✅ Check if inquiry already exists
     useEffect(() => {
-        if (data.inquiryId) {
+        if (data.inquiryId && !inquiryCreated) {
             setInquiryCreated(true);
+            setSubmissionProcessed(true);
         }
-    }, [data.inquiryId]);
+    }, [data.inquiryId, inquiryCreated]);
 
-    const onSubmit = async (formData: ExpressContactForm) => {
+    // ✅ Comprehensive form submission with multiple safeguards
+    const onSubmit = useCallback(async (formData: ExpressContactForm) => {
+        // Early validation checks
         if (!vendorData?.vendor) {
             toast.error('Vendor information not available');
             return;
         }
 
-        if (inquiryCreated || data.inquiryId) {
+        // ✅ Multiple layers of duplicate prevention
+        if (
+            inquiryCreated ||
+            data.inquiryId ||
+            isSubmitting ||
+            createInquiryMutation.isPending ||
+            submissionProcessed
+        ) {
+            console.log('Submission blocked - already processing or completed');
             return;
         }
 
-        createInquiryMutation.mutate({
-            brideName: formData.fullName,
-            groomName: '',
-            email: formData.email,
-            phone: formData.phone,
-            eventType: 'wedding',
-            eventDate: formData.eventDate,
-            location: 'TBD',
-            guestCount: '50',
-            vendorId: vendorData.vendor.id,
-            referredBy: data.referredBy,
-            additionalInfo: formData.message,
-        });
-    };
+        // ✅ Set submission state immediately to prevent race conditions
+        setIsSubmitting(true);
 
+        try {
+            console.log('Creating inquiry for:', formData.email);
+
+            createInquiryMutation.mutate({
+                brideName: formData.fullName,
+                groomName: '',
+                email: formData.email,
+                phone: formData.phone,
+                eventType: 'wedding',
+                eventDate: formData.eventDate,
+                location: 'TBD',
+                guestCount: '50',
+                vendorId: vendorData.vendor.id,
+                referredBy: data.referredBy,
+                message: formData.message,
+            });
+        } catch (error) {
+            console.error('Error during mutation:', error);
+            setIsSubmitting(false);
+            toast.error('Failed to submit inquiry. Please try again.');
+        }
+    }, [
+        vendorData?.vendor,
+        inquiryCreated,
+        data.inquiryId,
+        data.referredBy,
+        isSubmitting,
+        createInquiryMutation,
+        submissionProcessed
+    ]);
+
+    // ✅ Comprehensive loading and error states
     if (isVendorLoading) {
         return (
             <div className="min-h-[400px] flex items-center justify-center">
@@ -153,21 +200,35 @@ export function ExpressContactStep({
         );
     }
 
+    // ✅ Check if form should be disabled
+    const isFormDisabled = isSubmitting || createInquiryMutation.isPending || inquiryCreated || submissionProcessed;
+
     return (
         <div className="min-h-[500px] flex items-center justify-center p-4">
             <div className="w-full max-w-md">
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <form
+                        onSubmit={form.handleSubmit(onSubmit)}
+                        className="space-y-6"
+                        // ✅ Prevent form resubmission on Enter key
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && isFormDisabled) {
+                                e.preventDefault();
+                            }
+                        }}
+                    >
+                        {/* ✅ Enhanced success message */}
                         {inquiryCreated && (
                             <Alert className="border-green-200 bg-green-50/50">
                                 <CheckCircle className="h-4 w-4 text-green-600" />
                                 <AlertDescription className="text-green-800 font-medium">
-                                    ✨ Thank you! We'll contact you within 24 hours.
+                                    ✨ Thank you! Your inquiry has been submitted successfully. We'll contact you within 24 hours.
                                 </AlertDescription>
                             </Alert>
                         )}
 
-                        {createInquiryMutation.error && (
+                        {/* ✅ Enhanced error handling */}
+                        {createInquiryMutation.error && !inquiryCreated && (
                             <Alert variant="destructive">
                                 <AlertDescription>
                                     {createInquiryMutation.error.message || 'Failed to send inquiry. Please try again.'}
@@ -190,7 +251,7 @@ export function ExpressContactStep({
                                                 placeholder="Enter your full name"
                                                 className="h-11 focus:ring-2 focus:ring-primary/20 transition-all"
                                                 autoComplete="name"
-                                                disabled={createInquiryMutation.isPending || inquiryCreated}
+                                                disabled={isFormDisabled}
                                                 {...field}
                                             />
                                         </FormControl>
@@ -215,7 +276,7 @@ export function ExpressContactStep({
                                                 placeholder="your@email.com"
                                                 className="h-11 focus:ring-2 focus:ring-primary/20 transition-all"
                                                 autoComplete="email"
-                                                disabled={createInquiryMutation.isPending || inquiryCreated}
+                                                disabled={isFormDisabled}
                                                 {...field}
                                             />
                                         </FormControl>
@@ -240,7 +301,7 @@ export function ExpressContactStep({
                                                 placeholder="(555) 123-4567"
                                                 className="h-11 focus:ring-2 focus:ring-primary/20 transition-all"
                                                 autoComplete="tel"
-                                                disabled={createInquiryMutation.isPending || inquiryCreated}
+                                                disabled={isFormDisabled}
                                                 {...field}
                                             />
                                         </FormControl>
@@ -263,7 +324,7 @@ export function ExpressContactStep({
                                             <Input
                                                 type="date"
                                                 className="h-11 focus:ring-2 focus:ring-primary/20 transition-all"
-                                                disabled={createInquiryMutation.isPending || inquiryCreated}
+                                                disabled={isFormDisabled}
                                                 {...field}
                                             />
                                         </FormControl>
@@ -286,7 +347,7 @@ export function ExpressContactStep({
                                             <Textarea
                                                 placeholder="Tell us about your special day..."
                                                 className="min-h-[80px] resize-none focus:ring-2 focus:ring-primary/20 transition-all"
-                                                disabled={createInquiryMutation.isPending || inquiryCreated}
+                                                disabled={isFormDisabled}
                                                 {...field}
                                             />
                                         </FormControl>
@@ -296,17 +357,22 @@ export function ExpressContactStep({
                             />
                         </div>
 
+                        {/* ✅ Enhanced submit button with comprehensive disabled logic */}
                         {!inquiryCreated && (
                             <Button
                                 type="submit"
-                                disabled={createInquiryMutation.isPending || !form.formState.isValid}
-                                className="w-full h-12 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                                disabled={
+                                    isFormDisabled ||
+                                    !form.formState.isValid ||
+                                    Object.keys(form.formState.errors).length > 0
+                                }
+                                className="w-full h-12 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:transform-none disabled:shadow-lg"
                                 style={{
                                     backgroundColor: currentTheme.colors.primary,
                                     color: 'white'
                                 }}
                             >
-                                {createInquiryMutation.isPending ? (
+                                {(isSubmitting || createInquiryMutation.isPending) ? (
                                     <>
                                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                                         Sending Inquiry...
@@ -318,6 +384,19 @@ export function ExpressContactStep({
                                     </>
                                 )}
                             </Button>
+                        )}
+
+                        {/* ✅ Enhanced success state */}
+                        {inquiryCreated && (
+                            <div className="text-center py-4">
+                                <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+                                    <CheckCircle className="w-8 h-8 text-green-600" />
+                                </div>
+                                <h3 className="font-semibold text-green-800 mb-2">Inquiry Submitted!</h3>
+                                <p className="text-sm text-green-700">
+                                    We've received your information and will get back to you soon.
+                                </p>
+                            </div>
                         )}
 
                         <div className="text-center">

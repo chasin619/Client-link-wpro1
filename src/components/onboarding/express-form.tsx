@@ -35,7 +35,7 @@ export function ExpressContactStep({
     vendorSlug,
     onInquiryCreated
 }: ExpressContactStepProps) {
-    const { data, updateData } = useOnboardingStore();
+    const { data, updateData, clearData } = useOnboardingStore();
     const { currentTheme } = useTheme();
 
     const {
@@ -46,7 +46,6 @@ export function ExpressContactStep({
 
     const createInquiryMutation = useCreateInquiry();
 
-    // ✅ Enhanced state management to prevent duplicates
     const [inquiryCreated, setInquiryCreated] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submissionProcessed, setSubmissionProcessed] = useState(false);
@@ -83,13 +82,12 @@ export function ExpressContactStep({
         return () => subscription.unsubscribe();
     }, [form, updateData, isSubmitting, inquiryCreated]);
 
-    // ✅ Handle successful inquiry creation with proper state management
     useEffect(() => {
         if (createInquiryMutation.isSuccess && createInquiryMutation.data && !submissionProcessed) {
             setInquiryCreated(true);
             setIsSubmitting(false);
             setSubmissionProcessed(true);
-
+            clearData()
             toast.success(createInquiryMutation.data.message);
 
             if (onInquiryCreated) {
@@ -102,7 +100,7 @@ export function ExpressContactStep({
     useEffect(() => {
         if (createInquiryMutation.error) {
             setIsSubmitting(false);
-
+            clearData()
             const error = createInquiryMutation.error;
             if (error.errors) {
                 error.errors.forEach((err: any) => {
@@ -119,6 +117,7 @@ export function ExpressContactStep({
         if (data.inquiryId && !inquiryCreated) {
             setInquiryCreated(true);
             setSubmissionProcessed(true);
+            clearData()
         }
     }, [data.inquiryId, inquiryCreated]);
 
@@ -142,7 +141,6 @@ export function ExpressContactStep({
             return;
         }
 
-        // ✅ Set submission state immediately to prevent race conditions
         setIsSubmitting(true);
 
         try {
@@ -161,6 +159,7 @@ export function ExpressContactStep({
                 referredBy: data.referredBy,
                 message: formData.message,
             });
+            clearData()
         } catch (error) {
             console.error('Error during mutation:', error);
             setIsSubmitting(false);

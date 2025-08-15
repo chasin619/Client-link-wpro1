@@ -1,5 +1,4 @@
 // hooks/useInquiry.ts
-
 import { useMutation } from "@tanstack/react-query";
 import { useOnboardingStore } from "@/store/use-onboarding-store";
 
@@ -17,7 +16,7 @@ interface InquiryData {
 }
 
 export const useCreateInquiry = () => {
-  const { updateData } = useOnboardingStore();
+  const { updateData, clearData } = useOnboardingStore();
 
   return useMutation({
     mutationFn: async (inquiryData: InquiryData) => {
@@ -44,6 +43,9 @@ export const useCreateInquiry = () => {
       });
 
       console.log("Inquiry created successfully:", data);
+
+      // Clear data and redirect
+      clearData();
     },
     onError: (error) => {
       console.error("Failed to create inquiry:", error);

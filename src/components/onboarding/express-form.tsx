@@ -3,8 +3,8 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useEffect, useState, useCallback } from 'react';
-import { Mail, Phone, Calendar, MessageSquare, Loader2, Heart, Clock, CheckCircle, Star } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Mail, Phone, Calendar, MessageSquare, Loader2, Heart, CheckCircle } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -15,6 +15,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useVendorBySlug } from '@/hooks/useVendor';
 import { useCreateInquiry } from '@/hooks/useInquiry';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 const expressContactSchema = z.object({
     fullName: z.string().min(2, 'Full name must be at least 2 characters'),
@@ -31,24 +32,15 @@ interface ExpressContactStepProps {
     onInquiryCreated?: (inquiryId: number) => void;
 }
 
-export function ExpressContactStep({
-    vendorSlug,
-    onInquiryCreated
-}: ExpressContactStepProps) {
+export function ExpressContactStep({ vendorSlug, onInquiryCreated }: ExpressContactStepProps) {
     const { data, updateData, clearData } = useOnboardingStore();
     const { currentTheme } = useTheme();
+    const router = useRouter();
 
-    const {
-        data: vendorData,
-        isLoading: isVendorLoading,
-        error: vendorError
-    } = useVendorBySlug(vendorSlug);
-
+    const { data: vendorData, isLoading: isVendorLoading, error: vendorError } = useVendorBySlug(vendorSlug);
     const createInquiryMutation = useCreateInquiry();
 
-    const [inquiryCreated, setInquiryCreated] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [submissionProcessed, setSubmissionProcessed] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
 
     const form = useForm<ExpressContactForm>({
         resolver: zodResolver(expressContactSchema),
@@ -61,46 +53,45 @@ export function ExpressContactStep({
         },
     });
 
-    // ✅ Debounced form data updates to prevent excessive API calls
+    // Update store data when form changes (debounced by react-hook-form)
     useEffect(() => {
-        const subscription = form.watch((value) => {
-            // Only update if not currently submitting
-            if (!isSubmitting && !inquiryCreated) {
-                updateData({
-                    brideName: value.fullName,
-                    groomName: '',
-                    email: value.email,
-                    phone: value.phone,
-                    eventDate: value.eventDate,
-                    additionalInfo: value.message,
-                    eventType: 'wedding',
-                    venue: 'TBD',
-                    guestCount: 50,
-                });
-            }
-        });
-        return () => subscription.unsubscribe();
-    }, [form, updateData, isSubmitting, inquiryCreated]);
+        if (isSuccess) return; // Don't update after success
 
+        const subscription = form.watch((value) => {
+            updateData({
+                brideName: value.fullName,
+                groomName: '',
+                email: value.email,
+                phone: value.phone,
+                eventDate: value.eventDate,
+                additionalInfo: value.message,
+                eventType: 'wedding',
+                venue: 'TBD',
+                guestCount: 50,
+            });
+        });
+
+        return () => subscription.unsubscribe();
+    }, [form, updateData, isSuccess]);
+
+    // Handle successful inquiry creation
     useEffect(() => {
-        if (createInquiryMutation.isSuccess && createInquiryMutation.data && !submissionProcessed) {
-            setInquiryCreated(true);
-            setIsSubmitting(false);
-            setSubmissionProcessed(true);
-            clearData()
+        if (createInquiryMutation.isSuccess && createInquiryMutation.data && !isSuccess) {
+            setIsSuccess(true);
             toast.success(createInquiryMutation.data.message);
+            clearData();
 
             if (onInquiryCreated) {
                 onInquiryCreated(createInquiryMutation.data.data.inquiryId);
             }
-        }
-    }, [createInquiryMutation.isSuccess, createInquiryMutation.data, onInquiryCreated, submissionProcessed]);
 
-    // ✅ Handle errors and reset submission state
+
+        }
+    }, [createInquiryMutation.isSuccess, createInquiryMutation.data, isSuccess, onInquiryCreated, clearData, router]);
+
+    // Handle errors
     useEffect(() => {
         if (createInquiryMutation.error) {
-            setIsSubmitting(false);
-            clearData()
             const error = createInquiryMutation.error;
             if (error.errors) {
                 error.errors.forEach((err: any) => {
@@ -112,70 +103,39 @@ export function ExpressContactStep({
         }
     }, [createInquiryMutation.error]);
 
-    // ✅ Check if inquiry already exists
+    // Check if inquiry already exists
     useEffect(() => {
-        if (data.inquiryId && !inquiryCreated) {
-            setInquiryCreated(true);
-            setSubmissionProcessed(true);
-            clearData()
+        if (data.inquiryId && !isSuccess) {
+            setIsSuccess(true);
         }
-    }, [data.inquiryId, inquiryCreated]);
+    }, [data.inquiryId, isSuccess]);
 
-    // ✅ Comprehensive form submission with multiple safeguards
-    const onSubmit = useCallback(async (formData: ExpressContactForm) => {
-        // Early validation checks
+    const onSubmit = async (formData: ExpressContactForm) => {
         if (!vendorData?.vendor) {
             toast.error('Vendor information not available');
             return;
         }
 
-        // ✅ Multiple layers of duplicate prevention
-        if (
-            inquiryCreated ||
-            data.inquiryId ||
-            isSubmitting ||
-            createInquiryMutation.isPending ||
-            submissionProcessed
-        ) {
-            console.log('Submission blocked - already processing or completed');
+        if (isSuccess || createInquiryMutation.isPending) {
             return;
         }
 
-        setIsSubmitting(true);
+        createInquiryMutation.mutate({
+            brideName: formData.fullName,
+            groomName: '',
+            email: formData.email,
+            phone: formData.phone,
+            eventType: 'wedding',
+            eventDate: formData.eventDate,
+            location: 'TBD',
+            guestCount: '50',
+            vendorId: vendorData.vendor.id,
+            referredBy: data.referredBy,
+            message: formData.message,
+        });
+    };
 
-        try {
-            console.log('Creating inquiry for:', formData.email);
-
-            createInquiryMutation.mutate({
-                brideName: formData.fullName,
-                groomName: '',
-                email: formData.email,
-                phone: formData.phone,
-                eventType: 'wedding',
-                eventDate: formData.eventDate,
-                location: 'TBD',
-                guestCount: '50',
-                vendorId: vendorData.vendor.id,
-                referredBy: data.referredBy,
-                message: formData.message,
-            });
-            clearData()
-        } catch (error) {
-            console.error('Error during mutation:', error);
-            setIsSubmitting(false);
-            toast.error('Failed to submit inquiry. Please try again.');
-        }
-    }, [
-        vendorData?.vendor,
-        inquiryCreated,
-        data.inquiryId,
-        data.referredBy,
-        isSubmitting,
-        createInquiryMutation,
-        submissionProcessed
-    ]);
-
-    // ✅ Comprehensive loading and error states
+    // Loading state
     if (isVendorLoading) {
         return (
             <div className="min-h-[400px] flex items-center justify-center">
@@ -187,6 +147,7 @@ export function ExpressContactStep({
         );
     }
 
+    // Error state
     if (vendorError) {
         return (
             <div className="min-h-[400px] flex items-center justify-center px-4">
@@ -199,35 +160,25 @@ export function ExpressContactStep({
         );
     }
 
-    // ✅ Check if form should be disabled
-    const isFormDisabled = isSubmitting || createInquiryMutation.isPending || inquiryCreated || submissionProcessed;
+    const isFormDisabled = createInquiryMutation.isPending || isSuccess;
 
     return (
         <div className="min-h-[500px] flex items-center justify-center p-4">
             <div className="w-full max-w-md">
                 <Form {...form}>
-                    <form
-                        onSubmit={form.handleSubmit(onSubmit)}
-                        className="space-y-6"
-                        // ✅ Prevent form resubmission on Enter key
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && isFormDisabled) {
-                                e.preventDefault();
-                            }
-                        }}
-                    >
-                        {/* ✅ Enhanced success message */}
-                        {inquiryCreated && (
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        {/* Success message */}
+                        {isSuccess && (
                             <Alert className="border-green-200 bg-green-50/50">
                                 <CheckCircle className="h-4 w-4 text-green-600" />
                                 <AlertDescription className="text-green-800 font-medium">
-                                    ✨ Thank you! Your inquiry has been submitted successfully. We'll contact you within 24 hours.
+                                    ✨ Thank you! Your inquiry has been submitted successfully. Redirecting you to login...
                                 </AlertDescription>
                             </Alert>
                         )}
 
-                        {/* ✅ Enhanced error handling */}
-                        {createInquiryMutation.error && !inquiryCreated && (
+                        {/* Error message */}
+                        {createInquiryMutation.error && !isSuccess && (
                             <Alert variant="destructive">
                                 <AlertDescription>
                                     {createInquiryMutation.error.message || 'Failed to send inquiry. Please try again.'}
@@ -356,22 +307,18 @@ export function ExpressContactStep({
                             />
                         </div>
 
-                        {/* ✅ Enhanced submit button with comprehensive disabled logic */}
-                        {!inquiryCreated && (
+                        {/* Submit button */}
+                        {!isSuccess && (
                             <Button
                                 type="submit"
-                                disabled={
-                                    isFormDisabled ||
-                                    !form.formState.isValid ||
-                                    Object.keys(form.formState.errors).length > 0
-                                }
+                                disabled={isFormDisabled || !form.formState.isValid}
                                 className="w-full h-12 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:transform-none disabled:shadow-lg"
                                 style={{
                                     backgroundColor: currentTheme.colors.primary,
                                     color: 'white'
                                 }}
                             >
-                                {(isSubmitting || createInquiryMutation.isPending) ? (
+                                {createInquiryMutation.isPending ? (
                                     <>
                                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                                         Sending Inquiry...
@@ -385,8 +332,8 @@ export function ExpressContactStep({
                             </Button>
                         )}
 
-                        {/* ✅ Enhanced success state */}
-                        {inquiryCreated && (
+                        {/* Success state */}
+                        {isSuccess && (
                             <div className="text-center py-4">
                                 <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
                                     <CheckCircle className="w-8 h-8 text-green-600" />

@@ -75,7 +75,7 @@ export function OnboardWizard({ vendorSlug }: OnboardWizardProps) {
             setHasShownConfirmation(true);
             return;
         }
-        localStorage.clear()
+        // localStorage.clear()
 
         markCompleted();
         clearData();
@@ -88,7 +88,7 @@ export function OnboardWizard({ vendorSlug }: OnboardWizardProps) {
 
         const email = data.email;
         const phone = data.phone;
-        localStorage.clear()
+        // localStorage.clear()
         clearData();
         router.push(`https://client.wpro.ai?email=${email}&password=${phone}`);
     };

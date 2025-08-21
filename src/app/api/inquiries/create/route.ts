@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { sendEmailEvent } from "@/lib/eventEmail";
 import {
@@ -136,6 +135,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Step 5: Apply default design template if available
     let defaultTemplate = await prisma.designTemplate.findFirst({
       where: {
         vendorId: vendorId,
@@ -234,6 +234,9 @@ export async function POST(request: NextRequest) {
           inquiryId: event.id,
           brideName,
           groomName: groomName || "",
+          // Add the new parameters for auto-login URL
+          eventId: event.id.toString(),
+          vendorId: vendor.id.toString(),
         });
 
         await sendEmailEvent(
@@ -264,7 +267,9 @@ export async function POST(request: NextRequest) {
           inquiryId: event.id,
           brideName,
           groomName: groomName || "",
-          message: message,
+          // Add the new parameters for client login URL
+          eventId: event.id.toString(),
+          vendorId: vendor.id.toString(),
         });
 
         await sendEmailEvent(
@@ -314,6 +319,12 @@ export async function POST(request: NextRequest) {
           isNewClient,
           emailStatus: emailsSent,
           designSlotsCreated: defaultTemplate?.slots.length || 0,
+          // Add auto-login URL to response for reference
+          clientLoginUrl: `https://client.wpro.ai/?email=${encodeURIComponent(
+            client.email
+          )}&phone=${encodeURIComponent(phone)}&id=${event.id}&vendorId=${
+            vendor.id
+          }`,
         },
       },
       { status: 201 }

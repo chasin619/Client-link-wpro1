@@ -197,11 +197,11 @@ export async function POST(request: NextRequest) {
     });
 
     // Step 7: Create chat
+
     await prisma.chat.create({
       data: {
-        vendorId,
+        vendorId: vendor.id,
         clientId: client.id,
-        eventId: event.id,
         isActive: true,
         lastMessageAt: new Date(),
       },

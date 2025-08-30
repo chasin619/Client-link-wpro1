@@ -104,7 +104,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Step 4: Create event/inquiry with optional fields handled
     const event = await prisma.event.create({
       data: {
         clientId: client.id,
@@ -112,11 +111,14 @@ export async function POST(request: NextRequest) {
         eventTypeId: eventTypeRecord.id,
         weddingDate: new Date(eventDate),
         brideName,
-        groomName: groomName || "", // Default to empty string if not provided
-        location: location || "TBD", // Default location
+        groomName: groomName || "",
+        location: location || "TBD",
         NumberOfGuests: guestCountNumber,
         referredBy: referredBy || null,
         status: "Inquiry",
+        setupPriceId: 1,
+        breakdownPriceId: 1,
+        transferPriceId: 1,
       },
       include: {
         client: {

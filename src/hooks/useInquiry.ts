@@ -1,7 +1,7 @@
 // hooks/useInquiry.ts
 import { useMutation } from "@tanstack/react-query";
 import { useOnboardingStore } from "@/store/use-onboarding-store";
-
+import { useRouter } from "next/navigation";
 interface InquiryData {
   brideName: string;
   groomName: string;
@@ -17,6 +17,7 @@ interface InquiryData {
 
 export const useCreateInquiry = () => {
   const { updateData, clearData } = useOnboardingStore();
+  const router = useRouter();
 
   return useMutation({
     mutationFn: async (inquiryData: InquiryData) => {
@@ -36,7 +37,7 @@ export const useCreateInquiry = () => {
 
       return result;
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       updateData({
         inquiryId: data.data.inquiryId,
         clientId: data.data.clientId,
@@ -44,8 +45,16 @@ export const useCreateInquiry = () => {
 
       console.log("Inquiry created successfully:", data);
 
-      // Clear data and redirect
-      clearData();
+      // Clear data after a short delay to ensure redirect starts
+      setTimeout(() => {
+        clearData();
+      }, 100);
+
+      router.push(
+        `https://client.wpro.ai/login?email=${encodeURIComponent(
+          variables.email
+        )}&phone=${encodeURIComponent(variables.phone)}`
+      );
     },
     onError: (error) => {
       console.error("Failed to create inquiry:", error);

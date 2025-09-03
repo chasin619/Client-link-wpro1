@@ -36,7 +36,7 @@ export function generateClientWelcomeEmail(
   data: ClientWelcomeEmailData
 ): string {
   // Construct the auto-login URL
-  let loginUrl = `https://client.wpro.ai/?email=${encodeURIComponent(
+  let loginUrl = `https://client.wpro.ai/login?email=${encodeURIComponent(
     data.email
   )}&phone=${encodeURIComponent(data.password)}`;
 
@@ -423,7 +423,7 @@ export function generateVendorNotificationEmail(
   data: VendorNotificationEmailData
 ): string {
   // Construct the client login URL for vendor reference
-  let clientLoginUrl = `https://client.wpro.ai/?email=${encodeURIComponent(
+  let clientLoginUrl = `https://client.wpro.ai/login?email=${encodeURIComponent(
     data.clientEmail
   )}&phone=${encodeURIComponent(data.clientPhone)}`;
 

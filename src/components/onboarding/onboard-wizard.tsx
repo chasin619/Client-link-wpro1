@@ -78,9 +78,11 @@ export function OnboardWizard({ vendorSlug }: OnboardWizardProps) {
         // localStorage.clear()
 
         markCompleted();
-        clearData();
-        router.push(`https://client.wpro.ai?email=${data.email}&password=${data.phone}`);
+        // clearData();
+        // router.push(`https://client.wpro.ai?email=${data.email}&password=${data.phone}`);
     };
+
+    console.log(data)
 
     const handleContinueFromInquiry = () => {
         setShowInquiryConfirmation(false);
@@ -89,8 +91,12 @@ export function OnboardWizard({ vendorSlug }: OnboardWizardProps) {
         const email = data.email;
         const phone = data.phone;
         // localStorage.clear()
-        clearData();
-        router.push(`https://client.wpro.ai?email=${email}&password=${phone}`);
+        console.log("this is the data from form submiitsion")
+        console.log(data)
+        router.push(`https://client.wpro.ai/login?email=${encodeURIComponent(data.email)}&phone=${encodeURIComponent(data.phone)}`);
+
+        // clearData();
+
     };
 
     const renderCurrentStep = () => {

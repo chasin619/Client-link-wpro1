@@ -79,7 +79,7 @@ export function ExpressContactStep({ vendorSlug, onInquiryCreated }: ExpressCont
         if (createInquiryMutation.isSuccess && createInquiryMutation.data && !isSuccess) {
             setIsSuccess(true);
             toast.success(createInquiryMutation.data.message);
-            clearData();
+            // clearData();
 
             if (onInquiryCreated) {
                 onInquiryCreated(createInquiryMutation.data.data.inquiryId);

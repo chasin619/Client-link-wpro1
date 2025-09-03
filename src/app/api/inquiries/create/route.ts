@@ -323,7 +323,7 @@ export async function POST(request: NextRequest) {
           emailStatus: emailsSent,
           designSlotsCreated: defaultTemplate?.slots.length || 0,
           // Add auto-login URL to response for reference
-          clientLoginUrl: `https://client.wpro.ai/?email=${encodeURIComponent(
+          clientLoginUrl: `https://client.wpro.ai/login?email=${encodeURIComponent(
             client.email
           )}&phone=${encodeURIComponent(phone)}&id=${event.id}&vendorId=${
             vendor.id
